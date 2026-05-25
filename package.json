@@ -38,17 +38,24 @@
     "typecheck": "tsgo --noEmit",
     "format": "prettier --cache --write .",
     "release": "bumpp",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "s01": "tsx src/sessions/s01-agent-loop.ts"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^6.2.0",
+    "@anthropic-ai/sdk": "^0.98.0",
     "@types/node": "^25.6.0",
     "@typescript/native-preview": "7.0.0-dev.20260517.1",
-    "bumpp": "^11.0.1",
+    "cac": "^7.0.0",
+    "dotenv": "^17.4.2",
     "eslint": "^10.2.1",
+    "eslint-plugin-format": "^1.0.2",
     "tsdown": "^0.22.0",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5",
-        "@antfu/eslint-config": "^6.2.0",
-    "eslint-plugin-format": "^1.0.2"
+    "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
   }
 }
