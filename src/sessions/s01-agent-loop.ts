@@ -1,15 +1,15 @@
-import type { Message } from '../types'
+import type { Message, ToolDefinition, ToolHandler } from '../types'
 import * as process from 'node:process'
 import readline from 'node:readline'
 import { config } from 'dotenv'
 import pc from 'picocolors'
-import { agentLoop, WORKDIR } from '../core/agent-loop'
+import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
+import { BASE_TOOLS, runBash } from '../core/tools'
 import 'dotenv/config'
-import type { ToolDefinition } from '../types';
 
 config({ override: true, quiet: true })
-const TOOLS:ToolDefinition[] = []
-cosnt HANDLERS:Record<string,ToolHandler> = {bash:runBash}
+const TOOLS: ToolDefinition[] = [BASE_TOOLS[0]]
+const HANDLERS: Record<string, ToolHandler> = { bash: runBash }
 
 function welcome() {
   console.info(pc.cyan('╔════════════════════════════════════╗'))
@@ -40,7 +40,7 @@ function main() {
   })
 
   function prompt() {
-    rl.question('01>>', async (query: string) => {
+    rl.question(pc.cyan('01>>'), async (query: string) => {
       const trimmed = query.trim().toLocaleLowerCase()
       if (['q', 'exit', ''].includes(trimmed)) {
         rl.close()
@@ -48,10 +48,16 @@ function main() {
       }
       history.push({ role: 'user', content: query })
 
-      try{
-        await agentLoop(history,{tools:TOOLS,handlers:HANDLERS})
+      try {
+        await agentLoop(history, { tools: TOOLS, handlers: HANDLERS })
+        const reply = extractTextReply(history)
+        if (reply)
+          console.log(reply)
       }
-      console.log(history)
+      catch (e) {
+        console.error(pc.red(e as string))
+      }
+      console.log(JSON.stringify(history))
       prompt()
     })
   }
