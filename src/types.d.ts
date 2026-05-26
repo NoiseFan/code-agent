@@ -34,6 +34,14 @@ export interface ToolInputSchema {
   properties: Record<string, ToolProperty>
   required?: string[]
 }
+export interface ToolProperty {
+  type: string
+  description: string
+  enum?: string[]
+  items?: ToolProperty[]
+  preperties?: Record<string, ToolProperty>
+  required?: []
+}
 
 export interface AgentLoopOptions {
   tools: ToolDefinition[]

@@ -39,7 +39,11 @@
     "format": "prettier --cache --write .",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build",
-    "s01": "tsx src/sessions/s01-agent-loop.ts"
+    "s01": "tsx src/sessions/s01-agent-loop.ts",
+    "s02": "tsx src/sessions/s02-tool-use.ts"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
@@ -54,8 +58,5 @@
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
-  },
-  "dependencies": {
-    "picocolors": "^1.1.1"
   }
 }
