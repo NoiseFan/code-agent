@@ -1,12 +1,18 @@
-import type { PlanningState, TodoItem, ToolDefinition } from '../types'
+import type { PlanningState, TodoItem, ToolDefinition, ToolHandler } from '../types'
 
-enum TODOEnum {
+export enum TODOEnum {
   pending,
   in_progress,
   completed,
 }
 // TODO 最大条数（防止过长）
 const MAX_PLAN_ITEMS = 12
+
+const marker: Record<TODOEnum, string> = {
+  [TODOEnum.pending]: '[ ]',
+  [TODOEnum.in_progress]: '[>]',
+  [TODOEnum.completed]: '[x]',
+}
 
 export class TodoManger {
   private state: PlanningState = {
@@ -17,6 +23,7 @@ export class TodoManger {
   update(items: Array<TodoItem>): string {
     if (items.length > MAX_PLAN_ITEMS)
       throw new Error(`Keep the session plan short (max ${MAX_PLAN_ITEMS} items)`)
+
     const normalized: TodoItem[] = []
     let inProgressCount = 0
 
@@ -47,8 +54,31 @@ export class TodoManger {
     return this.reader()
   }
 
+  /**
+   * 记录一轮没有更新计划
+   */
+  noteRoundWithoutUpdate(): void {
+    this.state.roundSinceUpdate++
+  }
+
   reader(): string {
-    return ''
+    if (this.state.items.length === 0)
+      return 'No session plan yet'
+
+    const lines: string[] = []
+    for (const item of this.state.items) {
+      let line = `${marker[item.status]} ${item.content}`
+      if (item.status === TODOEnum.in_progress && item.activeForm) {
+        line += ` (${item.activeForm})`
+      }
+      lines.push(line)
+    }
+
+    // 进度统计
+    const completed = this.state.items.filter(i => i.status === TODOEnum.completed).length
+    lines.push(`\n(${completed}/${this.state.items.length} completed)`)
+
+    return lines.join('\n')
   }
 }
 
@@ -80,4 +110,16 @@ export const TODO_TOOL_DEFINTION: ToolDefinition = {
     },
     required: ['items'],
   },
+}
+
+export function createTodoHandler(manager: TodoManger): ToolHandler {
+  return (input) => {
+    try {
+      const items = input.items as TodoItem[]
+      return manager.update(items)
+    }
+    catch (error) {
+      return `Error: ${error instanceof Error ? error.message : 'Unknow error'}`
+    }
+  }
 }

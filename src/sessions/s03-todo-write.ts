@@ -5,7 +5,7 @@ import { config } from 'dotenv'
 import pc from 'picocolors'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
-import { TodoManger } from '../planning/todo'
+import { createTodoHandler, TODO_TOOL_DEFINTION, TodoManger } from '../planning/todo'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
@@ -29,14 +29,14 @@ function checkAPIKey() {
   }
 }
 const todoManager = new TodoManger()
-const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS]
+const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS, TODO_TOOL_DEFINTION]
 const HANDLERS: Record<string, ToolHandler> = {
   ...BASE_HANDLERS,
-  todo: createTodoHandler(),
+  todo: createTodoHandler(todoManager),
 }
 
 async function prompt(readLine: readline.Interface, history: Message[]) {
-  readLine.question(pc.cyan('02>>'), async (query: string) => {
+  readLine.question(pc.cyan('03>>'), async (query: string) => {
     const trimmed = query.trim().toLocaleLowerCase()
     if (['q', 'exit', ''].includes(trimmed)) {
       readLine.close()
@@ -45,7 +45,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     history.push({ role: 'user', content: query })
 
     try {
-      await agentLoop(history, { tools: BASE_TOOLS, handlers: BASE_HANDLERS })
+      await agentLoop(history, { tools: TOOLS, handlers: HANDLERS })
       const reply = extractTextReply(history)
       if (reply)
         console.log(reply)
@@ -53,6 +53,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     catch (e) {
       console.error(pc.red(e as string))
     }
+
     console.log(JSON.stringify(history))
     await runWrite({ path: './.tmp/03-todo-write.json', content: JSON.stringify(history) })
     await prompt(readLine, history)

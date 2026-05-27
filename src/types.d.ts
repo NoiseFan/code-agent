@@ -1,3 +1,5 @@
+import type { TODOEnum } from './planning/todo'
+
 export interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock

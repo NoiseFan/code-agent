@@ -40,7 +40,8 @@
     "release": "bumpp",
     "prepublishOnly": "pnpm run build",
     "s01": "tsx src/sessions/s01-agent-loop.ts",
-    "s02": "tsx src/sessions/s02-tool-use.ts"
+    "s02": "tsx src/sessions/s02-tool-use.ts",
+    "s03": "tsx src/sessions/s03-todo-write.ts"
   },
   "dependencies": {
     "picocolors": "^1.1.1"
