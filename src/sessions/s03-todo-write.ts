@@ -1,18 +1,19 @@
-import type { Message } from '../types'
+import type { Message, ToolDefinition, ToolHandler } from '../types'
 import * as process from 'node:process'
 import readline from 'node:readline'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
+import { TodoManger } from '../planning/todo'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
 
 function welcome() {
   console.info(pc.cyan('╔════════════════════════════════════╗'))
-  console.info(pc.cyan('║  s02 - Tool Use                    ║'))
-  console.info(pc.cyan('║  "Add tools = add a handler"       ║'))
+  console.info(pc.cyan('║  s03 - TodoWrite                   ║'))
+  console.info(pc.cyan('║  "No plan, agent drifts"           ║'))
   console.info(pc.cyan('╚════════════════════════════════════╝'))
   console.info()
 }
@@ -26,6 +27,12 @@ function checkAPIKey() {
     console.log(`Working directory: ${WORKDIR}`)
     console.log('Type "q" or "exit" to quit.\n')
   }
+}
+const todoManager = new TodoManger()
+const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS]
+const HANDLERS: Record<string, ToolHandler> = {
+  ...BASE_HANDLERS,
+  todo: createTodoHandler(),
 }
 
 async function prompt(readLine: readline.Interface, history: Message[]) {
@@ -47,7 +54,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
       console.error(pc.red(e as string))
     }
     console.log(JSON.stringify(history))
-    await runWrite({ path: './.tmp/02-tool-use.json', content: JSON.stringify(history) })
+    await runWrite({ path: './.tmp/03-todo-write.json', content: JSON.stringify(history) })
     await prompt(readLine, history)
   })
 }

@@ -1,4 +1,5 @@
 import type { ToolDefinition, ToolHandler } from '../types'
+import { defineToolDefinition } from '../tool-schema'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -78,7 +79,7 @@ export async function executeTool(name: string, input: Record<string, unknown>):
 }
 
 export const BASE_TOOLS: ToolDefinition[] = [
-  {
+  defineToolDefinition({
     name: 'bash',
     description: 'Run a shell command',
     input_schema: {
@@ -88,8 +89,8 @@ export const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['command'],
     },
-  },
-  {
+  }),
+  defineToolDefinition({
     name: 'read_file',
     description: 'Read file contents.',
     input_schema: {
@@ -100,8 +101,8 @@ export const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['path'],
     },
-  },
-  {
+  }),
+  defineToolDefinition({
     name: 'write_file',
     description: 'Write content to file',
     input_schema: {
@@ -112,8 +113,8 @@ export const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['path', 'content'],
     },
-  },
-  {
+  }),
+  defineToolDefinition({
     name: 'edit_file',
     description: 'Replace exact text in file',
     input_schema: {
@@ -125,7 +126,7 @@ export const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['path', 'old_text', 'new_text'],
     },
-  },
+  }),
 ]
 
 export const BASE_HANDLERS: Record<string, ToolHandler> = {
