@@ -1,7 +1,6 @@
-import type { Message, ToolDefinition, ToolHandler } from '../types'
+import type { Message } from '../types'
 import * as process from 'node:process'
 import readline from 'node:readline'
-import { fileURLToPath } from 'node:url'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'

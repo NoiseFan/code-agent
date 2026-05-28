@@ -1,3 +1,5 @@
+import type { TODOEnum, TodoManger } from './planning/todo'
+
 export interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock
@@ -30,23 +32,35 @@ export interface ToolDefinition {
 }
 
 export interface ToolInputSchema {
-  type: 'object'
-  properties: Record<string, ToolProperty>
+  type: 'object' | 'array' | 'string'
+  properties?: Record<string, ToolProperty>
   required?: string[]
 }
-export interface ToolProperty {
-  type: string
-  description: string
+export interface ToolProperty extends ToolInputSchema {
+  description?: string
   enum?: string[]
-  items?: ToolProperty[]
-  preperties?: Record<string, ToolProperty>
-  required?: []
+  items?: ToolProperty
 }
 
 export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
   system?: string
+  todoManager: TodoManger
 }
 
 export type ToolHandler = (input: Record<string, unknown>) => string | Promise<string>
+
+/* ==================== TODO ==================== */
+
+export interface TodoItem {
+  id: string
+  content: string
+  status: TODOEnum
+  activeForm?: string
+}
+
+export interface PlanningState {
+  items: TodoItem[]
+  roundSinceUpdate: number
+}
