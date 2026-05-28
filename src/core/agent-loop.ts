@@ -15,14 +15,14 @@ const client = new Anthropic({
 })
 
 export async function agentLoop(messages: Message[], options: AgentLoopOptions): Promise<void> {
-  const { handlers } = options
+  const { handlers, todoManager } = options
   const system = options.system ?? `You are a coding agent at ${WORKDIR}, use tools to solve tasks. Act, don't explain.`
   const anthropicTools: Anthropic.Messages.Tool[] = options.tools.map(t => ({
     name: t.name,
     description: t.description,
     input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
   }))
-
+  // console.log('[]', { anthropicTools })
   while (true) {
     // 1. 调用 LLM
     const response = await client.messages.create({
@@ -44,6 +44,8 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
       return
 
     const results: ToolResultBlock[] = []
+    let useTodo = false
+
     for (const block of response.content) {
       if (block.type === 'tool_use') {
         const toolBlock = block as Anthropic.Messages.ToolUseBlock
@@ -68,6 +70,20 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
           tool_use_id: toolBlock.id,
           content: output,
         })
+
+        // s03: 记录是否使用了 todo
+        if (toolBlock.name === 'todo') {
+          console.log('[211]')
+          useTodo = true
+        }
+      }
+    }
+
+    // todo 提醒机制
+    if (todoManager) {
+      if (!useTodo) {
+        todoManager.noteRoundWithoutUpdate()
+        const reminder = todoManager.reminder()
       }
     }
 

@@ -1,4 +1,4 @@
-import type { TODOEnum } from './planning/todo'
+import type { TODOEnum, TodoManger } from './planning/todo'
 
 export interface Message {
   role: 'user' | 'assistant'
@@ -46,6 +46,7 @@ export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
   system?: string
+  todoManager: TodoManger
 }
 
 export type ToolHandler = (input: Record<string, unknown>) => string | Promise<string>

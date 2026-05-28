@@ -7,6 +7,8 @@ export enum TODOEnum {
 }
 // TODO 最大条数（防止过长）
 const MAX_PLAN_ITEMS = 12
+// 多轮没更新计划后触发提醒
+const PLAN_REMINDER_INTERVAL = 3
 
 const marker: Record<TODOEnum, string> = {
   [TODOEnum.pending]: '[ ]',
@@ -28,7 +30,7 @@ export class TodoManger {
     let inProgressCount = 0
 
     for (const [index, rawItem] of items.entries()) {
-      const { content = '', status = 'pending', activeForm = '' } = rawItem
+      const { content = '', status = TODOEnum.pending, activeForm = '' } = rawItem
 
       if (!content)
         throw new Error(`Item ${index}`)
@@ -59,6 +61,18 @@ export class TodoManger {
    */
   noteRoundWithoutUpdate(): void {
     this.state.roundSinceUpdate++
+  }
+
+  /**
+   *
+   */
+  reminder(): string | null {
+    // 无 todo 时不提醒
+    if (this.state.items.length === 0)
+      return null
+    if (this.state.roundSinceUpdate < PLAN_REMINDER_INTERVAL)
+      return null
+    return '<reminder>Refresh your current plan before continuing.</reminder>'
   }
 
   reader(): string {
