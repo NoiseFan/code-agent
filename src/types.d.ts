@@ -42,6 +42,26 @@ export interface ToolProperty extends ToolInputSchema {
   items?: ToolProperty
 }
 
+export interface SubAgentContext {
+  /**
+   * 子 Agent 独立的上下文
+   */
+  messages: Message[]
+  /**
+   * 子 Agent 可使用的工具
+   */
+  tools: ToolDefinition[]
+  /**
+   * 工具的执行函数
+   */
+  handlers: Record<string, ToolHandler>
+  /**
+   * 最大轮次
+   */
+  maxTurn: number
+  systemPrompt: string
+}
+
 export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
