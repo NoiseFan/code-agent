@@ -66,13 +66,6 @@ async function runSubAgent(prompt: string): Promise<string> {
       max_tokens: 8_000,
     })
 
-    console.log('[subAgent]', {
-      model: MODEL,
-      system: context.systemPrompt,
-      messages: context.messages,
-      tools: anththorpicTools,
-      max_tokens: 8_000,
-    })
     lastResponse = response
     context.messages.push({ role: 'assistant', content: response.content })
 
