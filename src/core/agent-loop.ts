@@ -1,5 +1,5 @@
-import type { AgentLoopOptions, ContentBlock, Message, ToolResultBlock } from '../types'
-import * as process from 'node:process'
+import type { AgentLoopOptions, ContentBlock, Message, ToolHandler, ToolResultBlock } from '../types'
+import process from 'node:process'
 import Anthropic from '@anthropic-ai/sdk'
 import { config } from 'dotenv'
 import pc from 'picocolors'
@@ -22,7 +22,6 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
     description: t.description,
     input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
   }))
-  // console.log('[]', { anthropicTools })
   while (true) {
     // 1. 调用 LLM
     const response = await client.messages.create({
@@ -43,47 +42,27 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
     if (response.stop_reason !== 'tool_use')
       return
 
-    const results: ToolResultBlock[] = []
     let useTodo = false
-
-    for (const block of response.content) {
-      if (block.type === 'tool_use') {
-        const toolBlock = block as Anthropic.Messages.ToolUseBlock
-        const handler = handlers[toolBlock.name]
-        if (!handler) {
-          console.log(pc.red(`Unknow tools:${toolBlock.name}`))
-          results.push({
-            type: 'tool_result',
-            tool_use_id: toolBlock.id,
-            content: `Error: Unknow tool "${toolBlock.name}"`,
-          })
-        }
-        // 打印工具调用
-        console.log(pc.yellow(toolBlock.name))
-
-        // 执行工具
-        const output = await handler(toolBlock.input as Record<string, unknown>)
-        console.log(output.slice(0, 200))
-
-        results.push({
-          type: 'tool_result',
-          tool_use_id: toolBlock.id,
-          content: output,
-        })
-
+    const results = await execTool(response, {
+      handlers,
+      finalCallBack: (toolBlock) => {
         // s03: 记录是否使用了 todo
         if (toolBlock.name === 'todo') {
-          console.log('[211]')
           useTodo = true
         }
-      }
-    }
+      },
+    })
 
     // todo 提醒机制
     if (todoManager) {
       if (!useTodo) {
         todoManager.noteRoundWithoutUpdate()
         const reminder = todoManager.reminder()
+        if (reminder) {
+          // 提醒插入到 results 开头
+          results.unshift({ type: 'text', text: reminder })
+          console.log(pc.magenta(reminder))
+        }
       }
     }
 
@@ -93,6 +72,7 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
     // 循环继续，回到步骤 1...
   }
 }
+
 export function extractTextReply(message: Message[]): string {
   const lastContent = message.at(-1)?.content
   if (Array.isArray(lastContent)) {
@@ -102,4 +82,46 @@ export function extractTextReply(message: Message[]): string {
     }
   }
   return ''
+}
+interface ExecToolContext {
+  handlers: Record<string, ToolHandler>
+  finalCallBack?: (toolBlock: ContentBlock) => void
+}
+
+export async function execTool(response: Anthropic.Message, context: ExecToolContext): Promise<Array<ContentBlock>> {
+  const results: ToolResultBlock[] = []
+  for (const block of response.content) {
+    if (block.type !== 'tool_use')
+      continue
+
+    const { handlers, finalCallBack } = context
+    const toolBlock = block
+
+    const handler = handlers[toolBlock.name]
+    if (!handler) {
+      console.log(pc.red(`Unknow tools:${toolBlock.name}`))
+      results.push({
+        type: 'tool_result',
+        tool_use_id: toolBlock.id,
+        content: `Error: Unknown tool "${toolBlock.name}"`,
+      })
+      continue
+    }
+    // 打印工具调用
+    console.log(pc.yellow(toolBlock.name))
+
+    // 执行工具
+    const output = await handler(toolBlock.input as Record<string, unknown>)
+    console.log(output.slice(0, 200))
+
+    results.push({
+      type: 'tool_result',
+      tool_use_id: toolBlock.id,
+      content: output.slice(0, 50_000), // 限制输出长度
+    })
+
+    // 执行结束回调
+    finalCallBack?.(toolBlock)
+  }
+  return results
 }

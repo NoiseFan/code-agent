@@ -4,7 +4,7 @@ export interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock
 }
-export type ContentBlock = TextBlock | ToolUseBlock
+export type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock
 
 interface TextDecoder {
   type: 'text'
@@ -58,7 +58,7 @@ export interface SubAgentContext {
   /**
    * 最大轮次
    */
-  maxTurn: number
+  maxTurns: number
   systemPrompt: string
 }
 
@@ -66,7 +66,7 @@ export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
   system?: string
-  todoManager: TodoManger
+  todoManager?: TodoManger
 }
 
 export type ToolHandler = (input: Record<string, unknown>) => string | Promise<string>

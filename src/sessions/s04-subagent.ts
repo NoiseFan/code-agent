@@ -1,18 +1,17 @@
-import type { Message, ToolDefinition } from '../types'
+import type { Message, ToolDefinition, ToolHandler } from '../types'
 import * as process from 'node:process'
-
 import readline from 'node:readline'
-
 import { config } from 'dotenv'
-
-import { welcome } from '../core'
-import { WORKDIR } from '../core/agent-loop'
-import { BASE_TOOLS } from '../core/tools'
-import { TASK_TOOL_DEFINITION } from '../planning/subagent'
+import pc from 'picocolors'
+import { exit, welcome } from '../core'
+import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
+import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { createTaskHandler, TASK_TOOL_DEFINITION } from '../planning/subagent'
 
 config({ override: true, quiet: true })
 
 const TOOLS: ToolDefinition[] = [...BASE_TOOLS, TASK_TOOL_DEFINITION]
+const HANDLER: Record<string, ToolHandler> = { ...BASE_HANDLERS, task: createTaskHandler() }
 
 // s04 系统提示词（智能判断何时使用 task）
 const system = `You are a coding agent at ${WORKDIR}.
@@ -34,8 +33,23 @@ The task tool spawns a subagent with fresh messages. This keeps the parent conte
 Directly handle simple tasks; delegate complex exploration to subagent.`
 
 async function prompt(readLine: readline.Interface, history: Message[]) {
+  readLine.question(pc.cyan('04>>'), async (query: string) => {
+    const trimmed = query.trim()
+    exit(trimmed, readLine)
 
+    history.push({ role: 'user', content: query })
+    try {
+      await agentLoop(history, { system, tools: TOOLS, handlers: HANDLER })
+      const reply = extractTextReply(history)
+      if (reply)
+        console.log(reply)
+    }
+    catch (error) {
+      console.error(error)
+    }
+  })
 }
+
 function main() {
   welcome({ section: 's04 - Subagent', desc: 'Fresh context, clean parent' })
   const history: Message[] = []
