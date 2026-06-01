@@ -5,8 +5,9 @@ import { config } from 'dotenv'
 import pc from 'picocolors'
 import { exit, welcome } from '../core'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
-import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
 import { createTaskHandler, TASK_TOOL_DEFINITION } from '../planning/subagent'
+import { writeJSONFile } from '../utils/write'
 
 config({ override: true, quiet: true })
 
@@ -40,6 +41,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     history.push({ role: 'user', content: query })
     try {
       await agentLoop(history, { system, tools: TOOLS, handlers: HANDLER })
+      await writeJSONFile({ path: './.tmp/04-subagent.json', content: history })
       const reply = extractTextReply(history)
       if (reply)
         console.log(reply)

@@ -32,7 +32,7 @@ export interface ToolDefinition {
 }
 
 export interface ToolInputSchema {
-  type: 'object' | 'array' | 'string'
+  type: 'object' | 'array' | 'string' | 'integer'
   properties?: Record<string, ToolProperty>
   required?: string[]
 }

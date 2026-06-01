@@ -4,6 +4,7 @@ import { Anthropic } from '@anthropic-ai/sdk'
 import pc from 'picocolors'
 import { execTool, WORKDIR } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { writeJSONFile } from '../utils/write'
 
 // 子 Agent 最大
 const MAX_SUBAGENT_TURNS = 30
@@ -80,6 +81,7 @@ async function runSubAgent(prompt: string): Promise<string> {
     context.messages.push({ role: 'user', content: results })
   }
 
+  await writeJSONFile({ path: './.tmp/00-sub-agent.json', content: subMessages })
   // 4. 仅返回最终文本摘要（中间过程丢弃）
   if (lastResponse) {
     const textBlocks = lastResponse.content.filter(b => b.type === 'text')
@@ -98,12 +100,12 @@ export function createTaskHandler(): ToolHandler {
     if (!prompt)
       return 'Error: prompt is required'
 
-    console.log(pc.yellow(`task (${description || 'subtask'}): ${(prompt as string).slice(0, 80)}(${(prompt as string).length > 80 ? '...' : ''}`))
+    console.log(pc.cyan(`task (${description || 'subtask'}): ${(prompt as string).slice(0, 80)}(${(prompt as string).length > 80 ? '...' : ''}`))
 
     // 运行子 Agent
     const summary = await runSubAgent(prompt)
     // 打印摘要（截断显示）
-    console.log(pc.yellow(`${summary.slice(0, 200)}${summary.length > 200 ? '...' : ''}`))
-    return ''
+    console.log('SubAgent result:', pc.magenta(`${summary.slice(0, 200)}${summary.length > 200 ? '...' : ''}`))
+    return summary
   }
 }

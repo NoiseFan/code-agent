@@ -5,8 +5,9 @@ import { config } from 'dotenv'
 import pc from 'picocolors'
 import { exit, welcome } from '../core'
 import { agentLoop, extractTextReply } from '../core/agent-loop'
-import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
+import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { createTodoHandler, TODO_TOOL_DEFINTION, TodoManger } from '../planning/todo'
+import { writeJSONFile } from '../utils/write'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
@@ -35,7 +36,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     }
 
     console.log(JSON.stringify(history))
-    await runWrite({ path: './.tmp/03-todo-write.json', content: JSON.stringify(history) })
+    await writeJSONFile({ path: './.tmp/03-todo-write.json', content: history })
     await prompt(readLine, history)
   })
 }

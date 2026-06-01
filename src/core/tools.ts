@@ -2,6 +2,7 @@ import type { ToolDefinition, ToolHandler } from '../types'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import pc from 'picocolors'
 import { WORKDIR } from './agent-loop'
 
 const DANGEROUS_COMMANDS = ['rm -rf /', 'sudo', 'shutdown', 'reboot', '> /dev/']
