@@ -1,9 +1,9 @@
 import type { PlanningState, TodoItem, ToolDefinition, ToolHandler } from '../types'
 
 export enum TODOEnum {
-  pending,
-  in_progress,
-  completed,
+  pending = 'pending',
+  in_progress = 'in_progress',
+  completed = 'completed',
 }
 // TODO 最大条数（防止过长）
 const MAX_PLAN_ITEMS = 12

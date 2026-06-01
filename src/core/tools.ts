@@ -35,7 +35,7 @@ export const runBash: ToolHandler = (input) => {
 
 export const runRead: ToolHandler = async (input) => {
   const filePath = safePath(input.path as string)
-  const limit = input.limt as number | undefined
+  const limit = input.limit as number | undefined
 
   const content = fs.readFileSync(filePath, 'utf-8')
   const lines = content.split('\n')

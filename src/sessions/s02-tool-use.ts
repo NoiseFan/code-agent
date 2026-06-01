@@ -1,42 +1,17 @@
-import type { Message } from '../types'
-import * as process from 'node:process'
-import readline from 'node:readline'
+import type { PromptOpts } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
-import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
+import { initPrompt, resolvePrompt, welcome } from '../core'
+import { agentLoop, extractTextReply } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
-import { writeJSONFile } from '../utils/write'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
 
-function welcome() {
-  console.info(pc.cyan('╔════════════════════════════════════╗'))
-  console.info(pc.cyan('║  s02 - Tool Use                    ║'))
-  console.info(pc.cyan('║  "Add tools = add a handler"       ║'))
-  console.info(pc.cyan('╚════════════════════════════════════╝'))
-  console.info()
-}
-
-function checkAPIKey() {
-  if (!process.env.API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
-    console.error(pc.red('API key not set'))
-    console.error(pc.red('Please copy .env.example to .env and add your API Key'))
-  }
-  else {
-    console.log(`Working directory: ${WORKDIR}`)
-    console.log('Type "q" or "exit" to quit.\n')
-  }
-}
-
-async function prompt(readLine: readline.Interface, history: Message[]) {
+async function prompt(opts: PromptOpts) {
+  const { readLine, history } = opts
   readLine.question(pc.cyan('02>>'), async (query: string) => {
-    const trimmed = query.trim().toLocaleLowerCase()
-    if (['q', 'exit', ''].includes(trimmed)) {
-      readLine.close()
-      console.log('GoodBye!')
-    }
-    history.push({ role: 'user', content: query })
+    initPrompt({ query, readLine, history })
 
     try {
       await agentLoop(history, { tools: BASE_TOOLS, handlers: BASE_HANDLERS })
@@ -47,22 +22,9 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     catch (e) {
       console.error(pc.red(e as string))
     }
-    console.log(JSON.stringify(history))
-    await writeJSONFile({ path: './.tmp/02-tool-use.json', content: history })
-    await prompt(readLine, history)
+
+    await resolvePrompt({ history, fileName: '02-tool-use', readLine, prompt })
   })
 }
 
-function main() {
-  welcome()
-  checkAPIKey()
-  const history: Message[] = []
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  prompt(rl, history)
-}
-
-main()
+prompt(welcome({ section: 's02 - Tool Use', desc: 'Add tools = add a handler' }))

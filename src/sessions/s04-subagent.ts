@@ -1,9 +1,10 @@
-import type { Message, ToolDefinition, ToolHandler } from '../types'
+import type readline from 'node:readline'
+import type { Message, PromptOpts, ToolDefinition, ToolHandler } from '../types'
+import { resolve } from 'node:dns'
 import * as process from 'node:process'
-import readline from 'node:readline'
 import { config } from 'dotenv'
 import pc from 'picocolors'
-import { exit, welcome } from '../core'
+import { exit, initPrompt, resolvePrompt, welcome } from '../core'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
 import { createTaskHandler, TASK_TOOL_DEFINITION } from '../planning/subagent'
@@ -33,15 +34,13 @@ Do NOT use task tool for:
 The task tool spawns a subagent with fresh messages. This keeps the parent context clean.
 Directly handle simple tasks; delegate complex exploration to subagent.`
 
-async function prompt(readLine: readline.Interface, history: Message[]) {
+async function prompt(opts: PromptOpts) {
+  const { readLine, history } = opts
   readLine.question(pc.cyan('04>>'), async (query: string) => {
-    const trimmed = query.trim()
-    exit(trimmed, readLine)
+    initPrompt({ query, readLine, history })
 
-    history.push({ role: 'user', content: query })
     try {
       await agentLoop(history, { system, tools: TOOLS, handlers: HANDLER })
-      await writeJSONFile({ path: './.tmp/04-subagent.json', content: history })
       const reply = extractTextReply(history)
       if (reply)
         console.log(reply)
@@ -49,18 +48,9 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
     catch (error) {
       console.error(error)
     }
+
+    await resolvePrompt({ history, fileName: 's04-subageent', readLine, prompt })
   })
 }
 
-function main() {
-  welcome({ section: 's04 - Subagent', desc: 'Fresh context, clean parent' })
-  const history: Message[] = []
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  prompt(rl, history)
-}
-
-main()
+prompt(welcome({ section: 's04 - Subagent', desc: 'Fresh context, clean parent' }))

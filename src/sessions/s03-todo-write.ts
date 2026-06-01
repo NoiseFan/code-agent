@@ -1,17 +1,17 @@
-import type { Message, ToolDefinition, ToolHandler } from '../types'
-import * as process from 'node:process'
-import readline from 'node:readline'
+import type { PromptOpts, ToolDefinition, ToolHandler } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
-import { exit, welcome } from '../core'
-import { agentLoop, extractTextReply } from '../core/agent-loop'
+import { initPrompt, resolvePrompt, welcome } from '../core'
+import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { createTodoHandler, TODO_TOOL_DEFINTION, TodoManger } from '../planning/todo'
-import { writeJSONFile } from '../utils/write'
-import 'dotenv/config'
 
 config({ override: true, quiet: true })
 
+const SYSTEM_PROMPT = `You are a coding agent as ${WORKDIR}.
+Use the todo tool for mutil-step work.
+Keep exactly one step in_progress when a task hash multiple steps.
+Refresh the plan as work advances. Prefer tools over prose`
 const todoManager = new TodoManger()
 const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS, TODO_TOOL_DEFINTION]
 const HANDLERS: Record<string, ToolHandler> = {
@@ -19,14 +19,17 @@ const HANDLERS: Record<string, ToolHandler> = {
   todo: createTodoHandler(todoManager),
 }
 
-async function prompt(readLine: readline.Interface, history: Message[]) {
+async function prompt(opts: PromptOpts) {
+  const { readLine, history } = opts
   readLine.question(pc.cyan('03>>'), async (query: string) => {
-    const trimmed = query.trim().toLocaleLowerCase()
-    exit(trimmed, readLine)
-    history.push({ role: 'user', content: query })
-
+    initPrompt({ query, readLine, history })
     try {
-      await agentLoop(history, { tools: TOOLS, handlers: HANDLERS, todoManager })
+      await agentLoop(history, {
+        system: SYSTEM_PROMPT,
+        tools: TOOLS,
+        handlers: HANDLERS,
+        todoManager,
+      })
       const reply = extractTextReply(history)
       if (reply)
         console.log(reply)
@@ -35,21 +38,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
       console.error(pc.red(e as string))
     }
 
-    console.log(JSON.stringify(history))
-    await writeJSONFile({ path: './.tmp/03-todo-write.json', content: history })
-    await prompt(readLine, history)
+    await resolvePrompt({ history, fileName: '03-todo-write', readLine, prompt })
   })
 }
-
-function main() {
-  welcome({ section: 's03 - TodoWrite', desc: 'No plan, agent drifts' })
-  const history: Message[] = []
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  prompt(rl, history)
-}
-
-main()
+prompt(welcome({ section: 's03 - TodoWrite', desc: 'No plan, agent drifts' }))
