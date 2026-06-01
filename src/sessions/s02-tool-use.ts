@@ -4,7 +4,8 @@ import readline from 'node:readline'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
-import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
+import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { writeJSONFile } from '../utils/write'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
@@ -47,7 +48,7 @@ async function prompt(readLine: readline.Interface, history: Message[]) {
       console.error(pc.red(e as string))
     }
     console.log(JSON.stringify(history))
-    await runWrite({ path: './.tmp/02-tool-use.json', content: JSON.stringify(history) })
+    await writeJSONFile({ path: './.tmp/02-tool-use.json', content: history })
     await prompt(readLine, history)
   })
 }
