@@ -1,5 +1,10 @@
 import type { TODOEnum, TodoManger } from './planning/todo'
 
+export interface PromptOpts {
+  readLine: readline.Interface
+  history: Message[]
+}
+
 export interface Message {
   role: 'user' | 'assistant'
   content: ContentBlock
@@ -65,7 +70,7 @@ export interface SubAgentContext {
 export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
-  system?: string
+  system: string
   todoManager?: TodoManger
 }
 
@@ -83,4 +88,19 @@ export interface TodoItem {
 export interface PlanningState {
   items: TodoItem[]
   roundSinceUpdate: number
+}
+
+/* ==================== SKILL ==================== */
+
+// Skill 元信息
+export interface SkillMaifest {
+  name: string
+  description: string
+  path: string
+}
+
+// skill 完整正文
+export interface SkillDocument {
+  manifast: SkillMaifest
+  body: string
 }
