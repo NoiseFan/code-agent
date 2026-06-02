@@ -1,9 +1,21 @@
-import type { Message, PromptOpts } from '../types'
+import type { Anthropic } from '@anthropic-ai/sdk'
+import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
 import pc from 'picocolors'
 import { WORKDIR } from '../core/agent-loop'
 import { writeJSONFile } from '../utils/write'
+
+/**
+ * 转换成 Anthropic 格式的 Tool
+ */
+export function converTools(tools: ToolDefinition[]): Anthropic.Messages.Tool[] {
+  return tools.map(t => ({
+    name: t.name,
+    description: t.description,
+    input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
+  }))
+}
 
 export function checkAPIKey(): void {
   if (!process.env.API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {

@@ -74,6 +74,10 @@ export interface AgentLoopOptions {
   todoManager?: TodoManger
 }
 
+export type AgentLoopWithCompactOptions = AgentLoopOptions & Exclude<handlers, {
+  state: CompactState
+}>
+
 export type ToolHandler = (input: Record<string, unknown>) => string | Promise<string>
 
 /* ==================== TODO ==================== */
@@ -103,4 +107,20 @@ export interface SkillMaifest {
 export interface SkillDocument {
   manifast: SkillMaifest
   body: string
+}
+
+/* ==================== Compact ==================== */
+export interface CompactState {
+  /**
+   * 是否做过完整压缩
+   */
+  hasCompacted: boolean
+  /**
+   * 最后一次压缩摘要
+   */
+  lastSummary: string
+  /**
+   * 最近碰过的文件（压缩后可追踪）
+   */
+  recentFiles: string[]
 }
