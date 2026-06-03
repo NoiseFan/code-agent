@@ -2,7 +2,8 @@ import type { PromptOpts, ToolDefinition, ToolHandler } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
+import { agentLoop, extractTextReply } from '../core/agent-loop'
+import { WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { createLoadSkillHandler, LOAD_SKILL_TOOL_DEFINITION, SKILLRegistry } from '../planning/skill-loader'
 
@@ -25,7 +26,7 @@ const HANDLERS: Record<string, ToolHandler> = {
 }
 
 async function prompt(opts: PromptOpts) {
-  const { history = [], readLine } = opts
+  const { history, readLine } = opts
   readLine.question(pc.cyan('05>>>'), async (query: string) => {
     initPrompt({ query, readLine, history })
 
@@ -36,9 +37,7 @@ async function prompt(opts: PromptOpts) {
         tools: TOOLS,
         handlers: HANDLERS,
       })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      extractTextReply(history)
     }
     catch (e) {
       console.error(e)

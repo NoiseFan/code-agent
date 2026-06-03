@@ -1,16 +1,15 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { AgentLoopOptions, AgentLoopWithCompactOptions, ContentBlock, Message, ToolHandler, ToolResultBlock, ToolUseBlock } from '../types'
 import pc from 'picocolors'
-import { converTools } from '.'
+import { convertTools } from '.'
 import { compactHistory, CONTEXT_LIMIT, estimateContextSize, executeToolWithCompact, microCompact } from '../persistence/compact'
 import { client, MODEL, WORKDIR } from './runtime'
-
-export { client, MODEL, WORKDIR } from './runtime'
 
 export async function agentLoop(messages: Message[], options: AgentLoopOptions): Promise<void> {
   const { handlers, todoManager, tools } = options
   const system = options.system ?? `You are a coding agent at ${WORKDIR}, use tools to solve tasks. Act, don't explain.`
-  const anthropicTools = converTools(tools)
+  const anthropicTools = convertTools(tools)
+
   while (true) {
     // 1. 调用 LLM
     const response = await client.messages.create({
@@ -31,6 +30,7 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
     if (response.stop_reason !== 'tool_use')
       return
 
+    // 4. 执行工具
     let useTodo = false
     const results = await execTool(response, {
       handlers,
@@ -62,15 +62,16 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
   }
 }
 
-export function extractTextReply(message: Message[]): string {
+export function extractTextReply(message: Message[]): void {
   const lastContent = message.at(-1)?.content
+  let output = ''
   if (Array.isArray(lastContent)) {
     for (const block of lastContent) {
       if (block.type === 'text')
-        return block.text
+        output += block.text
     }
   }
-  return ''
+  console.log(output)
 }
 
 export async function execTool(
@@ -82,12 +83,14 @@ export async function execTool(
 ): Promise<Array<ContentBlock>> {
   const results: ToolResultBlock[] = []
   for (const block of response.content) {
+    // 1. 排除边界条件
     if (block.type !== 'tool_use')
       continue
 
     const { handlers, finalCallBack } = context
     const toolBlock = block
 
+    // 2. 解析到具体的 执行函数 >> runBash
     const handler = handlers[toolBlock.name]
     if (!handler) {
       console.log(pc.red(`Unknow tools:${toolBlock.name}`))
@@ -101,10 +104,11 @@ export async function execTool(
     // 打印工具调用
     console.log(pc.yellow(toolBlock.name))
 
-    // 执行工具
+    // 3. 执行工具
     const output = await handler(toolBlock.input as Record<string, unknown>)
     console.log(output.slice(0, 200))
 
+    // 4. 拼接输出结果
     results.push({
       type: 'tool_result',
       tool_use_id: toolBlock.id,
@@ -121,7 +125,7 @@ export async function execTool(
 
 export async function agentLoopWithCompact(messages: Array<Message>, opts: AgentLoopWithCompactOptions): Promise<void> {
   const { system, tools, state } = opts
-  const anthropicTools = converTools(tools)
+  const anthropicTools = convertTools(tools)
 
   while (true) {
     const replaceHistory = (nextMessages: Array<Message>) => {

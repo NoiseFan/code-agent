@@ -70,7 +70,7 @@ export interface SubAgentContext {
 export interface AgentLoopOptions {
   tools: ToolDefinition[]
   handlers: Record<string, ToolHandler>
-  system: string
+  system?: string
   todoManager?: TodoManger
 }
 

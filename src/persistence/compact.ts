@@ -138,7 +138,6 @@ export async function executeToolWithCompact(opts: {
       path: filePath,
       limit: input.limit as string | undefined,
     })
-
     return persistLargeOutput(id, cotent)
   }
 

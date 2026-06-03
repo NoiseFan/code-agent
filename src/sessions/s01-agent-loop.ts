@@ -4,7 +4,6 @@ import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
 import { agentLoop, extractTextReply } from '../core/agent-loop'
 import { BASE_TOOLS, runBash } from '../core/tools'
-import { writeJSONFile } from '../utils/write'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })
@@ -17,11 +16,11 @@ async function prompt(opts: PromptOpts) {
     initPrompt({ query, readLine, history })
 
     try {
-      await agentLoop(history, { tools: TOOLS, handlers: HANDLERS })
-      await writeJSONFile({ path: './.tmp/01-agent-loop.json', content: history })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      await agentLoop(
+        history,
+        { tools: TOOLS, handlers: HANDLERS },
+      )
+      extractTextReply(history)
     }
     catch (e) {
       console.error(pc.red(e as string))

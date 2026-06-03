@@ -9,7 +9,7 @@ import { WORKDIR } from './runtime'
 /**
  * 转换成 Anthropic 格式的 Tool
  */
-export function converTools(tools: ToolDefinition[]): Anthropic.Messages.Tool[] {
+export function convertTools(tools: ToolDefinition[]): Anthropic.Messages.Tool[] {
   return tools.map(t => ({
     name: t.name,
     description: t.description,

@@ -1,7 +1,8 @@
 import type { PromptOpts, ToolDefinition } from '../types'
 import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoopWithCompact, extractTextReply, WORKDIR } from '../core/agent-loop'
+import { agentLoopWithCompact, extractTextReply } from '../core/agent-loop'
+import { WORKDIR } from '../core/runtime'
 import { BASE_TOOLS } from '../core/tools'
 import { COMPACT_TOOL_DEFINITION, createCompactState } from '../persistence/compact'
 
@@ -9,7 +10,7 @@ const compactState = createCompactState()
 const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS, COMPACT_TOOL_DEFINITION]
 const SYSTEM = `You are a coding agent at ${WORKDIR}. Keep working step by step, and use compact if the conversation gets too lang.`
 async function prompt(opts: PromptOpts) {
-  const { readLine, history = [] } = opts
+  const { readLine, history } = opts
 
   readLine.question(pc.cyan('06>>'), async (query: string) => {
     initPrompt({ query, readLine, history })
@@ -20,9 +21,7 @@ async function prompt(opts: PromptOpts) {
         state: compactState,
         tools: TOOLS,
       })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      extractTextReply(history)
     }
     catch (e) {
       console.error(e)

@@ -14,10 +14,11 @@ async function prompt(opts: PromptOpts) {
     initPrompt({ query, readLine, history })
 
     try {
-      await agentLoop(history, { tools: BASE_TOOLS, handlers: BASE_HANDLERS })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      await agentLoop(
+        history,
+        { tools: BASE_TOOLS, handlers: BASE_HANDLERS },
+      )
+      extractTextReply(history)
     }
     catch (e) {
       console.error(pc.red(e as string))

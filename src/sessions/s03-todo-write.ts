@@ -30,9 +30,7 @@ async function prompt(opts: PromptOpts) {
         handlers: HANDLERS,
         todoManager,
       })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      extractTextReply(history)
     }
     catch (e) {
       console.error(pc.red(e as string))
