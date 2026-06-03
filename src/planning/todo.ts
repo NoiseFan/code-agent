@@ -115,7 +115,7 @@ export const TODO_TOOL_DEFINTION: ToolDefinition = {
             },
             activeFrom: {
               type: 'string',
-              description: 'Optionall present-continuous label (e.g. "Reading the file")',
+              description: 'Optional present-continuous label (e.g. "Reading the file")',
             },
           },
           required: ['content', 'status'],
