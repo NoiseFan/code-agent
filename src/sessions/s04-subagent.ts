@@ -1,14 +1,11 @@
-import type readline from 'node:readline'
-import type { Message, PromptOpts, ToolDefinition, ToolHandler } from '../types'
-import { resolve } from 'node:dns'
-import * as process from 'node:process'
+import type { PromptOpts, ToolDefinition, ToolHandler } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
-import { exit, initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoop, extractTextReply, WORKDIR } from '../core/agent-loop'
-import { BASE_HANDLERS, BASE_TOOLS, runWrite } from '../core/tools'
+import { initPrompt, resolvePrompt, welcome } from '../core'
+import { agentLoop, extractTextReply } from '../core/agent-loop'
+import { WORKDIR } from '../core/runtime'
+import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { createTaskHandler, TASK_TOOL_DEFINITION } from '../planning/subagent'
-import { writeJSONFile } from '../utils/write'
 
 config({ override: true, quiet: true })
 
@@ -41,15 +38,13 @@ async function prompt(opts: PromptOpts) {
 
     try {
       await agentLoop(history, { system, tools: TOOLS, handlers: HANDLER })
-      const reply = extractTextReply(history)
-      if (reply)
-        console.log(reply)
+      extractTextReply(history)
     }
     catch (error) {
       console.error(error)
     }
 
-    await resolvePrompt({ history, fileName: 's04-subageent', readLine, prompt })
+    await resolvePrompt({ history, fileName: '04-subageent', readLine, prompt })
   })
 }
 

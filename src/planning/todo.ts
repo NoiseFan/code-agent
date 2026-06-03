@@ -113,9 +113,9 @@ export const TODO_TOOL_DEFINTION: ToolDefinition = {
               enum: ['pending', 'in_progress', 'completed'],
               description: 'Current status of this setp',
             },
-            activeFrom: {
+            activeForm: {
               type: 'string',
-              description: 'Optionall present-continuous label (e.g. "Reading the file")',
+              description: 'Optional present-continuous label (e.g. "Reading the file")',
             },
           },
           required: ['content', 'status'],

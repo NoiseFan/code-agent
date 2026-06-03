@@ -1,8 +1,9 @@
+import type { Anthropic } from '@anthropic-ai/sdk'
 import type { Message, SubAgentContext, ToolDefinition, ToolHandler } from '../types'
-import process from 'node:process'
-import { Anthropic } from '@anthropic-ai/sdk'
 import pc from 'picocolors'
-import { execTool, WORKDIR } from '../core/agent-loop'
+import { convertTools } from '../core'
+import { execTool } from '../core/agent-loop'
+import { client, MODEL, WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { writeJSONFile } from '../utils/write'
 
@@ -13,7 +14,11 @@ const SUBAGENT_SYSTEM = `You are a coding subagent as ${WORKDIR}. Complete the g
 
 export const TASK_TOOL_DEFINITION: ToolDefinition = {
   name: 'task',
-  description: 'Launch a subagent with isolated context for exploration tasks. Use this when: (1) analyzing/searching multiple files or directories, (2) gathering information across codebase, (3) the task needs multiple steps but only final summary matters. Returns only the summary, keeping parent context clean.',
+  description: `Launch a subagent with isolated context for exploration tasks.
+  Use this when: (1) analyzing/searching multiple files or directories,
+  (2) gathering information across codebase,
+  (3) the task needs multiple steps but only final summary matters.
+  Returns only the summary, keeping parent context clean.`,
   input_schema: {
     type: 'object',
     properties: {
@@ -30,12 +35,6 @@ export const TASK_TOOL_DEFINITION: ToolDefinition = {
   },
 }
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_AUTH_TOKEN,
-  baseURL: process.env.ANTHROPIC_BASE_URL,
-})
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514'
-
 async function runSubAgent(prompt: string): Promise<string> {
   // 1. 创建空白上下文
   const subMessages: Message[] = [{ role: 'user', content: prompt }]
@@ -49,11 +48,7 @@ async function runSubAgent(prompt: string): Promise<string> {
     maxTurns: MAX_SUBAGENT_TURNS,
   }
 
-  const anththorpicTools: Anthropic.Messages.Tool[] = context.tools.map(t => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
-  }))
+  const anththorpicTools = convertTools(context.tools)
 
   // 3. 循环执行，最多 maxTurn 轮
   let lastResponse: Anthropic.Messages.Message | null = null

@@ -43,7 +43,8 @@
     "s02": "tsx src/sessions/s02-tool-use.ts",
     "s03": "tsx src/sessions/s03-todo-write.ts",
     "s04": "tsx src/sessions/s04-subagent.ts",
-    "s05": "tsx src/sessions/s05-skill-loader.ts"
+    "s05": "tsx src/sessions/s05-skill-loader.ts",
+    "s06": "tsx src/sessions/s06-context-compact.ts"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

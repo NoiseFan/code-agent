@@ -1,27 +1,15 @@
-import type { AgentLoopOptions, ContentBlock, Message, ToolHandler, ToolResultBlock } from '../types'
-import process from 'node:process'
-import Anthropic from '@anthropic-ai/sdk'
-import { config } from 'dotenv'
+import type Anthropic from '@anthropic-ai/sdk'
+import type { AgentLoopOptions, AgentLoopWithCompactOptions, ContentBlock, Message, ToolHandler, ToolResultBlock, ToolUseBlock } from '../types'
 import pc from 'picocolors'
-import 'dotenv/config'
-
-export const WORKDIR: string = process.cwd()
-config({ path: WORKDIR, override: true, quiet: true })
-
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514'
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_AUTH_TOKEN,
-  baseURL: process.env.ANTHROPIC_BASE_URL,
-})
+import { convertTools } from '.'
+import { compactHistory, CONTEXT_LIMIT, estimateContextSize, executeToolWithCompact, microCompact } from '../persistence/compact'
+import { client, MODEL, WORKDIR } from './runtime'
 
 export async function agentLoop(messages: Message[], options: AgentLoopOptions): Promise<void> {
-  const { handlers, todoManager } = options
+  const { handlers, todoManager, tools } = options
   const system = options.system ?? `You are a coding agent at ${WORKDIR}, use tools to solve tasks. Act, don't explain.`
-  const anthropicTools: Anthropic.Messages.Tool[] = options.tools.map(t => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
-  }))
+  const anthropicTools = convertTools(tools)
+
   while (true) {
     // 1. 调用 LLM
     const response = await client.messages.create({
@@ -42,6 +30,7 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
     if (response.stop_reason !== 'tool_use')
       return
 
+    // 4. 执行工具
     let useTodo = false
     const results = await execTool(response, {
       handlers,
@@ -73,30 +62,35 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
   }
 }
 
-export function extractTextReply(message: Message[]): string {
+export function extractTextReply(message: Message[]): void {
   const lastContent = message.at(-1)?.content
+  let output = ''
   if (Array.isArray(lastContent)) {
     for (const block of lastContent) {
       if (block.type === 'text')
-        return block.text
+        output += block.text
     }
   }
-  return ''
-}
-interface ExecToolContext {
-  handlers: Record<string, ToolHandler>
-  finalCallBack?: (toolBlock: ContentBlock) => void
+  console.log(output)
 }
 
-export async function execTool(response: Anthropic.Message, context: ExecToolContext): Promise<Array<ContentBlock>> {
+export async function execTool(
+  response: Anthropic.Message,
+  context: {
+    handlers: Record<string, ToolHandler>
+    finalCallBack?: (toolBlock: ContentBlock) => void
+  },
+): Promise<Array<ContentBlock>> {
   const results: ToolResultBlock[] = []
   for (const block of response.content) {
+    // 1. 排除边界条件
     if (block.type !== 'tool_use')
       continue
 
     const { handlers, finalCallBack } = context
     const toolBlock = block
 
+    // 2. 解析到具体的 执行函数 >> runBash
     const handler = handlers[toolBlock.name]
     if (!handler) {
       console.log(pc.red(`Unknow tools:${toolBlock.name}`))
@@ -110,10 +104,11 @@ export async function execTool(response: Anthropic.Message, context: ExecToolCon
     // 打印工具调用
     console.log(pc.yellow(toolBlock.name))
 
-    // 执行工具
+    // 3. 执行工具
     const output = await handler(toolBlock.input as Record<string, unknown>)
     console.log(output.slice(0, 200))
 
+    // 4. 拼接输出结果
     results.push({
       type: 'tool_result',
       tool_use_id: toolBlock.id,
@@ -124,4 +119,72 @@ export async function execTool(response: Anthropic.Message, context: ExecToolCon
     finalCallBack?.(toolBlock)
   }
   return results
+}
+
+/* ==================== 主循环（带压缩） ==================== */
+
+export async function agentLoopWithCompact(messages: Array<Message>, opts: AgentLoopWithCompactOptions): Promise<void> {
+  const { system, tools, state } = opts
+  const anthropicTools = convertTools(tools)
+
+  while (true) {
+    const replaceHistory = (nextMessages: Array<Message>) => {
+      messages.splice(0, messages.length, ...nextMessages)
+    }
+
+    // 每轮开始之前做微压缩
+    microCompact(messages)
+
+    // 检查是否需要完整压缩
+    if (estimateContextSize(messages) > CONTEXT_LIMIT) {
+      console.log('[auto compact]')
+      replaceHistory(await compactHistory({ message: messages, state }))
+    }
+
+    const response = await client.messages.create({
+      model: MODEL,
+      system,
+      messages,
+      tools: anthropicTools,
+      max_tokens: 8000,
+    })
+
+    messages.push({ role: 'assistant', content: response.content as ContentBlock[] })
+
+    if (response.stop_reason !== 'tool_use')
+      return
+
+    // 执行工具
+    const results: Array<ContentBlock> = []
+    let manualCompact = false
+    let compactFocus: string | undefined
+
+    for (const block of response.content) {
+      if (block.type !== 'tool_use')
+        continue
+
+      const toolBlock = block as ToolUseBlock
+      const output = await executeToolWithCompact({ toolBlock, state })
+
+      if (toolBlock.name === 'compact') {
+        manualCompact = true
+        const input = toolBlock.input as Record<string, unknown> | undefined
+        compactFocus = (input?.focus as string) || undefined
+      }
+
+      console.log(`> ${toolBlock.name}: ${output.slice(0, 200)}`)
+      results.push({
+        type: 'tool_result',
+        tool_use_id: toolBlock.id,
+        content: output,
+      })
+    }
+
+    messages.push({ role: 'user', content: results })
+
+    if (manualCompact) {
+      console.log(pc.cyan('[manual compact]'))
+      replaceHistory(await compactHistory({ message: messages, state, compactFocus }))
+    }
+  }
 }

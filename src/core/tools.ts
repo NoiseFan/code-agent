@@ -2,8 +2,7 @@ import type { ToolDefinition, ToolHandler } from '../types'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import pc from 'picocolors'
-import { WORKDIR } from './agent-loop'
+import { WORKDIR } from './runtime'
 
 const DANGEROUS_COMMANDS = ['rm -rf /', 'sudo', 'shutdown', 'reboot', '> /dev/']
 
@@ -37,14 +36,19 @@ export const runRead: ToolHandler = async (input) => {
   const filePath = safePath(input.path as string)
   const limit = input.limit as number | undefined
 
-  const content = fs.readFileSync(filePath, 'utf-8')
-  const lines = content.split('\n')
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    const lines = content.split('\n')
 
-  if (limit && limit < lines.length) {
-    lines.length = limit
-    lines.push(`... (${lines.length - limit}) more lines`)
+    if (limit && limit < lines.length) {
+      lines.length = limit
+      lines.push(`... (${lines.length - limit}) more lines`)
+    }
+    return lines.join('\n').slice(0, 50_000)
   }
-  return lines.join('\n').slice(0, 50_000)
+  catch (e) {
+    return `Error: ${e}`
+  }
 }
 
 export const runEdit: ToolHandler = async (input) => {
@@ -52,22 +56,32 @@ export const runEdit: ToolHandler = async (input) => {
   const oldText = input.old_text as string
   const newText = input.new_text as string
 
-  const content = fs.readFileSync(filePath, 'utf-8')
-  if (!content.includes(oldText))
-    return `Error: Text not found in ${input.path}`
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    if (!content.includes(oldText))
+      return `Error: Text not found in ${input.path}`
 
-  const newContent = content.replace(oldText, newText)
-  fs.writeFileSync(filePath, newContent, 'utf-8')
-  return `Edited ${input.path}`
+    const newContent = content.replace(oldText, newText)
+    fs.writeFileSync(filePath, newContent, 'utf-8')
+    return `Edited ${input.path}`
+  }
+  catch (e) {
+    return `Error: ${e}`
+  }
 }
 
 export const runWrite: ToolHandler = async (input) => {
   const filePath = safePath(input.path as string)
   const content = input.content as string
 
-  fs.mkdirSync(path.dirname(filePath), { recursive: true })
-  fs.writeFileSync(filePath, content, 'utf-8')
-  return `Wrote ${content.length} bytes to ${input.path}`
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, content, 'utf-8')
+    return `Wrote ${content.length} bytes to ${input.path}`
+  }
+  catch (e) {
+    return `Error: ${e}`
+  }
 }
 
 export async function executeTool(name: string, input: Record<string, unknown>): Promise<string | undefined> {
