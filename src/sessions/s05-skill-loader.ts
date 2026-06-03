@@ -25,7 +25,7 @@ const HANDLERS: Record<string, ToolHandler> = {
 }
 
 async function prompt(opts: PromptOpts) {
-  const { history, readLine } = opts
+  const { history = [], readLine } = opts
   readLine.question(pc.cyan('05>>>'), async (query: string) => {
     initPrompt({ query, readLine, history })
 

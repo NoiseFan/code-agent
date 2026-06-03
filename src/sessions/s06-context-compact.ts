@@ -9,7 +9,7 @@ const compactState = createCompactState()
 const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS, COMPACT_TOOL_DEFINITION]
 const SYSTEM = `You are a coding agent at ${WORKDIR}. Keep working step by step, and use compact if the conversation gets too lang.`
 async function prompt(opts: PromptOpts) {
-  const { readLine, history } = opts
+  const { readLine, history = [] } = opts
 
   readLine.question(pc.cyan('06>>'), async (query: string) => {
     initPrompt({ query, readLine, history })

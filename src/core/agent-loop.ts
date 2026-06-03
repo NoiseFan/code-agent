@@ -124,13 +124,17 @@ export async function agentLoopWithCompact(messages: Array<Message>, opts: Agent
   const anthropicTools = converTools(tools)
 
   while (true) {
+    const replaceHistory = (nextMessages: Array<Message>) => {
+      messages.splice(0, messages.length, ...nextMessages)
+    }
+
     // 每轮开始之前做微压缩
-    let message = microCompact(messages)
+    microCompact(messages)
 
     // 检查是否需要完整压缩
-    if (estimateContextSize(message) > CONTEXT_LIMIT) {
+    if (estimateContextSize(messages) > CONTEXT_LIMIT) {
       console.log('[auto compact]')
-      message = await compactHistory({ message, state })
+      replaceHistory(await compactHistory({ message: messages, state }))
     }
 
     const response = await client.messages.create({
@@ -172,11 +176,11 @@ export async function agentLoopWithCompact(messages: Array<Message>, opts: Agent
       })
     }
 
-    message.push({ role: 'user', content: results })
+    messages.push({ role: 'user', content: results })
 
     if (manualCompact) {
       console.log(pc.cyan('[manual compact]'))
-      message = await compactHistory({ message, state, compactFocus })
+      replaceHistory(await compactHistory({ message: messages, state, compactFocus }))
     }
   }
 }
