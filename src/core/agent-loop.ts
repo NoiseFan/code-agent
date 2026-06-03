@@ -1,17 +1,18 @@
-import type { AgentLoopOptions, AgentLoopWithCompactOptions, CompactState, ContentBlock, Message, ToolDefinition, ToolHandler, ToolResultBlock } from '../types'
+import type { AgentLoopOptions, AgentLoopWithCompactOptions, ContentBlock, Message, ToolHandler, ToolResultBlock, ToolUseBlock } from '../types'
 import process from 'node:process'
 import Anthropic from '@anthropic-ai/sdk'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { converTools } from '.'
-import { compactHistroy, CONTEXT_LIMIT, createCompactState, estimateContextSize, executeToolWithCompact, microCompact } from '../persistence/compact'
+import { compactHistory, CONTEXT_LIMIT, estimateContextSize, executeToolWithCompact, microCompact } from '../persistence/compact'
 import 'dotenv/config'
 
 export const WORKDIR: string = process.cwd()
 config({ path: WORKDIR, override: true, quiet: true })
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514'
-const client = new Anthropic({
+export const MODEL: string = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514'
+
+export const client: Anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_AUTH_TOKEN,
   baseURL: process.env.ANTHROPIC_BASE_URL,
 })
@@ -139,7 +140,7 @@ export async function agentLoopWithCompact(messages: Array<Message>, opts: Agent
     // 检查是否需要完整压缩
     if (estimateContextSize(message) > CONTEXT_LIMIT) {
       console.log('[auto compact]')
-      message = await compactHistroy({ message, state })
+      message = await compactHistory({ message, state })
     }
 
     const response = await client.messages.create({
@@ -164,7 +165,7 @@ export async function agentLoopWithCompact(messages: Array<Message>, opts: Agent
       if (block.type !== 'tool_use')
         continue
 
-      const toolBlock = block
+      const toolBlock = block as ToolUseBlock
       const output = await executeToolWithCompact({ toolBlock, state })
 
       if (toolBlock.name === 'compact') {
@@ -185,7 +186,7 @@ export async function agentLoopWithCompact(messages: Array<Message>, opts: Agent
 
     if (manualCompact) {
       console.log(pc.cyan('[manual compact]'))
-      message = await compactHistroy({ message, state, compactFocus })
+      message = await compactHistory({ message, state, compactFocus })
     }
   }
 }

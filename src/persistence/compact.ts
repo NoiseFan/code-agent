@@ -2,7 +2,9 @@ import type { CompactState, Message, ToolDefinition, ToolResultBlock, ToolUseBlo
 
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { WORKDIR } from '../core/agent-loop'
+import pc from 'picocolors'
+import { client, MODEL, WORKDIR } from '../core/agent-loop'
+
 import { runBash, runEdit, runRead, runWrite } from '../core/tools'
 
 /* ==================== 配置常量 ==================== */
@@ -18,6 +20,10 @@ const PERSIST_THRESHOLD = 30_000
 // 预览字数
 const PREVIEW_CHARS = 2000
 
+// transcript 目录
+const TRANSCRIPT_DIR = path.join(WORKDIR, '.transcripts')
+
+// tool_result 目录
 const TOOL_RESULTS_DIR = path.join(WORKDIR, '.task_outputs', 'tool-results')
 
 /* ==================== 工具函数 ==================== */
@@ -159,16 +165,81 @@ export async function executeToolWithCompact(opts: {
 
 /* ==================== 第 3 层：完整压缩 ==================== */
 
+/**
+ * 完整备份历史
+ */
+async function writeTranScript(messages: Array<Message>) {
+  await fs.mkdir(TRANSCRIPT_DIR, { recursive: true })
+
+  const transcriptPath = path.join(TOOL_RESULTS_DIR, `transcript${+Date.now()}.jsonl`)
+  const lines = messages.map(m => JSON.stringify(m))
+  await fs.writeFile(transcriptPath, lines.join('\n'), 'utf-8')
+
+  return transcriptPath
+}
+
+async function summarizeHistory(messages: Message[]): Promise<string> {
+  const conversation = JSON.stringify(messages).slice(0, 80_000)
+
+  const prompt = `Summarize this coding-agent conversation so work can continue.
+Preserve:
+1. The current goal
+2. Important findings and decisions
+3. Files read or changed
+4. Remaining work
+5. User constraints and preferences
+Be compact but concrete.
+
+${conversation}`
+
+  const response = await client.messages.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 2_000,
+  })
+
+  // 提取文本
+  const textBlocks = response.content.filter(b => b.type === 'text')
+
+  return textBlocks.map(b => b.text).join('\n').trim()
+}
+
 interface CompactHistoryOptsType {
   message: Array<Message>
   state: CompactState
   compactFocus?: string
 }
-export async function compactHistroy(opts: CompactHistoryOptsType): Promise<Array<Message>> {
+export async function compactHistory(opts: CompactHistoryOptsType): Promise<Array<Message>> {
   const { message, state, compactFocus } = opts
+
   // 1. 先写 transcript (完整历史备份)
-  // const trancscriptPath = await writeTranScript(message)
-  return message
+  const trancscriptPath = await writeTranScript(message)
+  console.log(pc.green(`[transcript saved: ${path.relative(WORKDIR, trancscriptPath)}]`))
+
+  // 2. 调用 LLM 生成摘要
+  let summary = await summarizeHistory(message)
+
+  // 3. 添加 focus 信息（手动压缩时）
+  if (compactFocus)
+    summary += `\n\n Focus to preserve next ${compactFocus}`
+
+  // 4. 添加 recent files 信息
+  if (state.recentFiles.length > 0) {
+    const recentLines = state.recentFiles.map(f => `-${f}`).join('\n')
+    summary += `\n\nRecent files to repen if needed:\n${recentLines}`
+  }
+
+  // 5. 更新状态
+  state.hasCompacted = true
+  state.lastSummary = summary
+
+  // 6. 返回新的简洁上下文
+  return [
+    {
+      role: 'user',
+      content: `This conversation was compacted so the agent can continue working.\n\n${summary}`,
+    },
+  ]
 }
 
 /* ==================== compact 工具定义 ==================== */

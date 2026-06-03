@@ -17,7 +17,7 @@ interface TextDecoder {
 }
 
 interface ToolUseBlock {
-  type: 'tools_use'
+  type: 'tool_use'
   id: string
   name: string
   input: Record<string, unknown>
