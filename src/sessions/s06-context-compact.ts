@@ -1,6 +1,6 @@
 import type { PromptOpts, ToolDefinition } from '../types'
 import pc from 'picocolors'
-import { initPrompt, welcome } from '../core'
+import { initPrompt, resolvePrompt, welcome } from '../core'
 import { agentLoopWithCompact, extractTextReply, WORKDIR } from '../core/agent-loop'
 import { BASE_TOOLS } from '../core/tools'
 import { COMPACT_TOOL_DEFINITION, createCompactState } from '../persistence/compact'
@@ -27,6 +27,7 @@ async function prompt(opts: PromptOpts) {
     catch (e) {
       console.error(e)
     }
+    resolvePrompt({ history, fileName: '06-context-compact', readLine, prompt })
   })
 }
 prompt(welcome({ section: 's06 - context compact', desc: 'Keep working, keep compact' }))

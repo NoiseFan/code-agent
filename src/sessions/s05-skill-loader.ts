@@ -40,8 +40,8 @@ async function prompt(opts: PromptOpts) {
       if (reply)
         console.log(reply)
     }
-    catch {
-
+    catch (e) {
+      console.error(e)
     }
     await resolvePrompt({ history, fileName: '05-skill-load', readLine, prompt })
   })

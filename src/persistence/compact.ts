@@ -3,7 +3,7 @@ import type { CompactState, Message, ToolDefinition, ToolResultBlock, ToolUseBlo
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
-import { client, MODEL, WORKDIR } from '../core/agent-loop'
+import { client, MODEL, WORKDIR } from '../core/runtime'
 
 import { runBash, runEdit, runRead, runWrite } from '../core/tools'
 
@@ -21,7 +21,7 @@ const PERSIST_THRESHOLD = 30_000
 const PREVIEW_CHARS = 2000
 
 // transcript 目录
-const TRANSCRIPT_DIR = path.join(WORKDIR, '.transcripts')
+const TRANSCRIPT_DIR = path.join(path.join(WORKDIR, '.tmp'), '.transcripts')
 
 // tool_result 目录
 const TOOL_RESULTS_DIR = path.join(WORKDIR, '.task_outputs', 'tool-results')
@@ -88,7 +88,7 @@ function collectToolResultBlocks(messages: Array<Message>): blockType {
 
     for (const [blockIndex, block] of message.content.entries()) {
       if (block.type === 'tool_result')
-        block.push({ messageIndex, blockIndex, block: block as ToolResultBlock })
+        blocks.push({ messageIndex, blockIndex, block: block as ToolResultBlock })
     }
   }
   return blocks
@@ -171,7 +171,7 @@ export async function executeToolWithCompact(opts: {
 async function writeTranScript(messages: Array<Message>) {
   await fs.mkdir(TRANSCRIPT_DIR, { recursive: true })
 
-  const transcriptPath = path.join(TOOL_RESULTS_DIR, `transcript${+Date.now()}.jsonl`)
+  const transcriptPath = path.join(TRANSCRIPT_DIR, `transcript${+Date.now()}.jsonl`)
   const lines = messages.map(m => JSON.stringify(m))
   await fs.writeFile(transcriptPath, lines.join('\n'), 'utf-8')
 

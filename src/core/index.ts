@@ -3,8 +3,8 @@ import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
 import pc from 'picocolors'
-import { WORKDIR } from '../core/agent-loop'
 import { writeJSONFile } from '../utils/write'
+import { WORKDIR } from './runtime'
 
 /**
  * 转换成 Anthropic 格式的 Tool
