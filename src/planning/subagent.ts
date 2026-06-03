@@ -1,6 +1,7 @@
 import type { Anthropic } from '@anthropic-ai/sdk'
 import type { Message, SubAgentContext, ToolDefinition, ToolHandler } from '../types'
 import pc from 'picocolors'
+import { convertTools } from '../core'
 import { execTool } from '../core/agent-loop'
 import { client, MODEL, WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
@@ -47,11 +48,7 @@ async function runSubAgent(prompt: string): Promise<string> {
     maxTurns: MAX_SUBAGENT_TURNS,
   }
 
-  const anththorpicTools: Anthropic.Messages.Tool[] = context.tools.map(t => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.input_schema as Anthropic.Messages.Tool.InputSchema,
-  }))
+  const anththorpicTools = convertTools(context.tools)
 
   // 3. 循环执行，最多 maxTurn 轮
   let lastResponse: Anthropic.Messages.Message | null = null
