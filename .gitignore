@@ -6,3 +6,4 @@ dist
 .eslintcache
 *.env
 .tmp
+.task_outputs

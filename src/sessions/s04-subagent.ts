@@ -44,7 +44,7 @@ async function prompt(opts: PromptOpts) {
       console.error(error)
     }
 
-    await resolvePrompt({ history, fileName: 's04-subageent', readLine, prompt })
+    await resolvePrompt({ history, fileName: '04-subageent', readLine, prompt })
   })
 }
 
