@@ -1,4 +1,5 @@
-import type { PermissionModeType } from '../types/permission'
+import type { ToolInput } from '../types'
+import type { PermissionDecision, PermissionModeType } from '../types/permission'
 
 /* ==================== 权限管理器 ==================== */
 export const PermissionMode = {
@@ -28,5 +29,12 @@ export class PermissionManager {
     if (!PermissionModels.includes(mode))
       throw new Error(`Unknow mode: ${mode}. Choose from ${PermissionModels.join(', ')}`)
     this.mode = mode
+  }
+
+  check(name: string, input: ToolInput): PermissionDecision {
+    return {
+      behavior: 'allow',
+      reason: '',
+    }
   }
 }

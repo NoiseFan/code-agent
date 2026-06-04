@@ -2,10 +2,11 @@ import type { PromptOpts, ToolDefinition, ToolHandler } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoop, extractTextReply } from '../core/agent-loop'
+import { agentLoop } from '../core/agent-loop/simple'
 import { WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
 import { createLoadSkillHandler, LOAD_SKILL_TOOL_DEFINITION, SKILLRegistry } from '../planning/skill-loader'
+import { extractTextReply } from '../utils/agent-loop'
 
 config({ override: true, quiet: true })
 const skillRegistry = new SKILLRegistry()

@@ -3,7 +3,19 @@ import readline from 'node:readline'
 
 import { select } from '@clack/prompts'
 import pc from 'picocolors'
+import { WORKDIR } from '../core/runtime'
 import { PermissionManager, PermissionModels } from '../persistence/permission'
+
+const SYSTEM = `You are a coding agent at ${WORKDIR}. Use tools to solve tasks.
+The user controls permissions. Some tool calls may be denied.
+
+Available permission modes:
+- default: Ask user fo unmatched operations
+- plan: Read-only mode, no writes allowed
+- auto: Auto-approve safe reads, ask for writes
+
+Use /mode to swtich modes. Use /rules to see current rules.
+`
 
 async function main() {
   const readLine = readline.createInterface({
