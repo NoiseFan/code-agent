@@ -1,5 +1,5 @@
 import type { ToolInput } from '../types'
-import type { PermissionDecision, PermissionModeType } from '../types/permission'
+import type { PermissionDecision, PermissionModeType, PermissionRule } from '../types/permission'
 
 /* ==================== 权限管理器 ==================== */
 export const PermissionMode = {
@@ -9,6 +9,14 @@ export const PermissionMode = {
 } as const
 
 export const PermissionModels: PermissionModeType[] = Object.values(PermissionMode)
+
+/* ==================== 默认规则 ==================== */
+
+const DEFAULT_RULES: PermissionRule[] = [
+  { tool: 'bash', content: 'rm -rf /', behavior: 'deny' },
+  { tool: 'bash', content: 'sudo *', behavior: 'deny' },
+  { tool: 'read_file', content: '*', behavior: 'allow' },
+]
 
 /**
  * 权限管理器
@@ -21,8 +29,13 @@ export const PermissionModels: PermissionModeType[] = Object.values(PermissionMo
  */
 export class PermissionManager {
   mode: PermissionModeType
-  constructor(mode: PermissionModeType) {
+  rules: PermissionRule[]
+  consecutiveDenials = 0
+  maxConsecutiveDenials = 3
+
+  constructor(mode: PermissionModeType, rules: PermissionRule[]) {
     this.setModelValue(mode)
+    this.rules = rules ?? [...DEFAULT_RULES]
   }
 
   private setModelValue(mode: PermissionModeType): void {

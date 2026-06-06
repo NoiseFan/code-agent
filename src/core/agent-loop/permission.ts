@@ -7,8 +7,10 @@ import { client, MODEL } from '../runtime'
 import { BASE_HANDLERS } from '../tools'
 
 export async function agentLoopWithPermission(messages: Message[], options: AgentLoopOptions): Promise<void> {
-  const { system, tools, handlers, perms, readline } = options
+  const { system, tools, perms, readline } = options
   const anthropicTools = convertTools(tools)
+  if (!readline)
+    return
 
   while (true) {
     // 1. 调用 LLM
@@ -29,7 +31,11 @@ export async function agentLoopWithPermission(messages: Message[], options: Agen
       return
 
     // 4. 调用工具
-    await execTool(response, { handlers, perms, readline })
+    const toolContext = { output: '', perms, readLine: readline }
+    const results = await execTool(response, toolContext)
+
+    // 将结果追加回消息
+    messages.push({ role: 'user', content: results })
   }
 }
 
@@ -49,11 +55,11 @@ async function execTool(
   response: Anthropic.Message,
   context: {
     readLine: readline.Interface
-    handlers: Record<string, ToolHandler>
     perms: PermissionManager | undefined
+    output: string
   },
 ): Promise<Array<ToolResultBlock>> {
-  const { handlers, perms, readLine } = context
+  const { perms, readLine } = context
   const results: ToolResultBlock[] = []
   if (!perms)
     return results
@@ -67,30 +73,83 @@ async function execTool(
 
     // 2. 权限检查
     const decision = perms.check(toolName, toolInput as ToolInput)
-    let output: string
     const handler = BASE_HANDLERS[toolName]
+
+    // 3. 处理权限
     if (handler) {
-      if (decision.behavior === 'allow') {
-        output = handler ? await handler(toolInput as ToolInput) : `Unknow tool: ${toolName}`
-        console.log(`> ${toolName}: ${output.slice(0, 200)}`)
+      if (decision.behavior === 'deny') {
+        context.output = `Permission denied: ${decision.reason}`
+        console.log(`  [DENIED] ${toolName}: ${decision.reason}`)
+      }
+      else if (decision.behavior === 'allow') {
+        context.output = await handler(toolInput as ToolInput)
+        console.log(`> ${toolName}: ${context.output.slice(0, 200)}`)
       }
       else if (decision.behavior === 'ask') {
-        const answer = await new Promise<string>((resolve) => {
-          readLine.question('  Allow? (y/n/always): ', resolve)
-        }) as 'y' | 'yes' | 'n' | 'always'
-        const answerLowCase = answer.toLowerCase()
+        await execToolByAsk({
+          ...context,
+          readLine,
+          perms,
+          handler,
+          output: context.output,
+          toolInput: toolInput as ToolInput,
+          toolName,
+        })
+      }
+      else {
+        console.error('Unknow behavior')
       }
     }
     else {
-      output = `Unknow tool: ${toolName}`
+      context.output = `Unknow tool: ${toolName}`
     }
 
     results.push({
       type: 'tool_result',
       tool_use_id: block.id,
-      content: output,
+      content: context.output,
     })
   }
 
   return results
+}
+
+interface ExecToolByAskOptions {
+  readLine: readline.Interface
+  perms: PermissionManager
+  handler: ToolHandler
+  output: string
+  toolName: string
+  toolInput: ToolInput
+}
+
+async function execToolByAsk(opts: ExecToolByAskOptions) {
+  const { readLine, perms, toolName, toolInput, handler } = opts
+
+  // 需要用户确认
+  console.log(`\n  [Permission] ${toolName}: ${JSON.stringify(toolInput).slice(0, 200)}`)
+
+  const answerInput = await new Promise<string>((resolve) => {
+    readLine.question('  Allow? (y/n/always): ', resolve)
+  })
+  const answer = answerInput.toLowerCase() as 'y' | 'yes' | 'n' | 'no' | 'always' | 'a'
+
+  if (['y', 'yes', 'a', 'always'].includes(answer)) {
+    if (['a', 'always'].includes(answer)) {
+      perms.rules.push({ tool: toolName, path: '*', behavior: 'allow' })
+      perms.consecutiveDenials = 0
+    }
+    opts.output = await handler(toolInput)
+    console.log(`> ${toolName}: ${opts.output.slice(0, 200)}`)
+  }
+  else {
+    opts.output = `Permission denied by user for ${toolName}`
+    perms.consecutiveDenials++
+    console.log(` [USER DENIED] ${toolName}`)
+    if (perms.consecutiveDenials >= perms.maxConsecutiveDenials) {
+      console.log(
+        `  [${perms.consecutiveDenials} consecutive denials -- consider switching to plan mode]`,
+      )
+    }
+  }
 }
