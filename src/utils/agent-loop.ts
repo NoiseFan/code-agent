@@ -14,6 +14,19 @@ export function extractTextReply(message: Message[]): void {
   console.log(output)
 }
 
+export function transformAssistant(block: ContentBlock): ContentBlock {
+  // todo 没搞懂，这里为什么做这一层的转换
+  switch (block.type) {
+    case 'text':
+      return { type: 'text', text: block.text }
+    case 'tool_use':
+      return { type: 'tool_use', id: block.id, name: block.name, input: block.input }
+    default:
+      // 将 thinking block 等，转换为 text
+      return { type: 'text', text: JSON.stringify(block) }
+  }
+}
+
 export async function execTool(
   response: Anthropic.Message,
   context: {
@@ -59,5 +72,3 @@ export async function execTool(
   }
   return results
 }
-
-/* ==================== 主循环（带压缩） ==================== */

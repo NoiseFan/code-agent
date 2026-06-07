@@ -1,8 +1,9 @@
 import type { Anthropic } from '@anthropic-ai/sdk'
 import type readline from 'node:readline'
 import type { PermissionManager } from '../../persistence/permission'
-import type { AgentLoopOptions, ContentBlock, Message, ToolHandler, ToolInput, ToolResultBlock } from '../../types'
+import type { AgentLoopOptions, Message, ToolHandler, ToolInput, ToolResultBlock } from '../../types'
 import { convertTools } from '..'
+import { transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
 import { BASE_HANDLERS } from '../tools'
 
@@ -39,18 +40,6 @@ export async function agentLoopWithPermission(messages: Message[], options: Agen
   }
 }
 
-function transformAssistant(block: ContentBlock): ContentBlock {
-  // todo 没搞懂，这里为什么做这一层的转换
-  switch (block.type) {
-    case 'text':
-      return { type: 'text', text: block.text }
-    case 'tool_use':
-      return { type: 'tool_use', id: block.id, name: block.name, input: block.input }
-    default:
-      // 将 thinking block 等，转换为 text
-      return { type: 'text', text: JSON.stringify(block) }
-  }
-}
 async function execTool(
   response: Anthropic.Message,
   context: {

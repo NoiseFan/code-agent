@@ -1,4 +1,5 @@
 import type readline from 'node:readline'
+import type { HookManager } from '../persistence/hooks'
 import type { PermissionManager } from '../persistence/permission'
 import type { TODOEnum, TodoManger } from '../planning/todo'
 
@@ -71,8 +72,8 @@ export interface SubAgentContext {
   systemPrompt: string
 }
 export type AgentLoopOptions = Partial<AgentLoopCustomTool> & {
-  tools: ToolDefinition[]
-  handlers: Record<string, ToolHandler>
+  tools?: ToolDefinition[]
+  handlers?: Record<string, ToolHandler>
   system?: string
   readline?: readline.Interface
 }
@@ -80,6 +81,7 @@ export type AgentLoopOptions = Partial<AgentLoopCustomTool> & {
 interface AgentLoopCustomTool {
   todoManager: TodoManger
   perms: PermissionManager
+  hooks: HookManager
 }
 
 export type AgentLoopWithCompactOptions = AgentLoopOptions & Exclude<handlers, {

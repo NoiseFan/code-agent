@@ -45,7 +45,8 @@
     "s04": "tsx src/sessions/s04-subagent.ts",
     "s05": "tsx src/sessions/s05-skill-loader.ts",
     "s06": "tsx src/sessions/s06-context-compact.ts",
-    "s07": "tsx src/sessions/s07-permission-system.ts"
+    "s07": "tsx src/sessions/s07-permission-system.ts",
+    "s08": "tsx src/sessions/s08-hook-system.ts"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

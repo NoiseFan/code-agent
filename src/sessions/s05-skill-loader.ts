@@ -28,23 +28,21 @@ const HANDLERS: Record<string, ToolHandler> = {
 
 async function prompt(opts: PromptOpts) {
   const { history, readLine } = opts
-  readLine.question(pc.cyan('05>>>'), async (query: string) => {
-    initPrompt({ query, readLine, history })
+  await initPrompt({ prefix: '05>>>', readLine, history })
 
-    await skillRegistry.ready
-    try {
-      await agentLoop(history, {
-        system: createSystemPrompt(),
-        tools: TOOLS,
-        handlers: HANDLERS,
-      })
-      extractTextReply(history)
-    }
-    catch (e) {
-      console.error(e)
-    }
-    await resolvePrompt({ history, fileName: '05-skill-load', readLine, prompt })
-  })
+  await skillRegistry.ready
+  try {
+    await agentLoop(history, {
+      system: createSystemPrompt(),
+      tools: TOOLS,
+      handlers: HANDLERS,
+    })
+    extractTextReply(history)
+  }
+  catch (e) {
+    console.error(e)
+  }
+  await resolvePrompt({ history, fileName: '05-skill-load', readLine, prompt })
 }
 
 prompt(welcome({ section: 's05 - Skills', desc: 'Discover cheap, load when needed' }))
