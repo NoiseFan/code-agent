@@ -6,6 +6,7 @@ import type { TODOEnum, TodoManger } from '../planning/todo'
 export interface PromptOpts {
   readLine: readline.Interface
   history: Message[]
+  hooks?: HookManager
 }
 
 export interface Message {

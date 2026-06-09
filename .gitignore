@@ -7,3 +7,4 @@ dist
 *.env
 .tmp
 .task_outputs
+.claude

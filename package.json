@@ -36,7 +36,6 @@
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsgo --noEmit",
-    "format": "prettier --cache --write .",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build",
     "s01": "tsx src/sessions/s01-agent-loop.ts",

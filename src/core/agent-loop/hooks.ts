@@ -7,7 +7,7 @@ import { transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
 import { BASE_HANDLERS } from '../tools'
 
-export async function agentLoopWithHooks(messages: Array<Message>, opts: AgentLoopOptions) {
+export async function agentLoopWithHooks(messages: Array<Message>, opts: AgentLoopOptions): Promise<void> {
   const { system, tools, hooks } = opts
   const anthropicTools = convertTools(tools)
 
@@ -22,7 +22,7 @@ export async function agentLoopWithHooks(messages: Array<Message>, opts: AgentLo
     })
 
     // 2. 记录 assistant 回复
-    const assistantContent = transformAssistant(response.content)
+    const assistantContent = response.content.map(transformAssistant)
     messages.push({ role: 'assistant', content: assistantContent })
 
     // 3. 如果模型决定停止，退出循环

@@ -9,7 +9,9 @@ import { WORKDIR } from './runtime'
 /**
  * 转换成 Anthropic 格式的 Tool
  */
-export function convertTools(tools: ToolDefinition[]): Anthropic.Messages.Tool[] {
+export function convertTools(tools: ToolDefinition[] | undefined): Anthropic.Messages.Tool[] {
+  if (!tools || !tools.length)
+    return []
   return tools.map(t => ({
     name: t.name,
     description: t.description,
@@ -93,13 +95,15 @@ function outputCommand(query: string) {
  * 初始化 prompt
  */
 export async function initPrompt(opts: {
-  prefix: string
+  prefix?: string
+  query?: string
   readLine: readline.Interface
   history: Message[]
-
 }): Promise<string> {
   const { prefix, readLine, history } = opts
-  const query = await inputPrompt(readLine, prefix)
+  let query = opts.query ?? ''
+  if (prefix)
+    query = await inputPrompt(readLine, prefix)
   const trimmed = query.trim().toLocaleLowerCase()
   exit(trimmed, readLine)
 

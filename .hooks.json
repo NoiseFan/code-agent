@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "echo 'Welcome!' >&2 && exit 2"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "bash",
+        "command": "echo 'Bash will execute...' && exit 0"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "write_file",
+        "command": "path=$(echo \"$HOOK_TOOL_INPUT\" | jq -r '.path') && prettier --write \"$path\""
+      }
+    ]
+  }
+}

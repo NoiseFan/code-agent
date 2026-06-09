@@ -2,8 +2,8 @@ import type { HookContext, HookDefinition, HookEvent, HookResult } from '../type
 import { execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-
 import process from 'node:process'
+import pc from 'picocolors'
 import { WORKDIR } from '../core/runtime'
 
 export const HooksEventEnum = ['SessionStart', 'PreToolUse', 'PostToolUse'] as const
@@ -46,7 +46,7 @@ interface HookExecutionResult {
 // HOOK 配置文件路径
 const DEFAULT_CONFIG_PATH = path.join(WORKDIR, '.hooks.json')
 // 当前工作区信任文件标记
-const TRUST_MARKER = path.join(WORKDIR, '.claude', '.claude_trusted')
+export const TRUST_MARKER: string = path.join(WORKDIR, '.claude', '.claude_trusted')
 // Hook 执行超时时间
 const HOOK_TIMEOUT = 30
 
@@ -105,8 +105,19 @@ export class HookManager {
     if (this.sdkMode)
       return true
 
-    // 检查信任标记是否村遭
+    // 检查信任标记是否存在
     return existsSync(TRUST_MARKER)
+  }
+
+  /**
+   * 检查工具是否与工具名称是否匹配
+   */
+  private matches(matcher?: string, toolName?: string): boolean {
+    if (!matcher || matcher === '*' || toolName)
+      return true
+
+    // 精确匹配
+    return matcher === toolName
   }
 
   /**
@@ -116,7 +127,7 @@ export class HookManager {
    * @param context 当时所在上下文
    * @returns HookResult: 是否阻止、是否注入消息
    */
-  runHooks(event: HookEvent, context: HookContext): HookResult {
+  runHooks(event: HookEvent, context?: HookContext): HookResult {
     const result: HookResult = {
       blocked: false,
       messages: [],
@@ -132,14 +143,13 @@ export class HookManager {
     // 3. 遍历执行每一个 Hook
     for (const hook of hooks) {
       // 3.1 检查 matcher 与工具是否匹配
-      if (!this.matches(hook.matcher, context.tool_name))
+      if (!this.matches(hook.matcher, context?.tool_name))
         continue
 
       // 3.2 执行 hook 命令
       const hookExecResult = this.executeHook(hook, context, event)
 
       // 3.3 根据退出码处理结果
-
       if (hookExecResult.exitCode === HookExitCode.Block) {
         result.blocked = true
         result.blockReson = hookExecResult.stderr.trim() || 'Blocked by hook'
@@ -160,28 +170,17 @@ export class HookManager {
     return result
   }
 
-  /**
-   * 检查工具是否与工具名称是否匹配
-   */
-  private matches(matcher: string | undefined, toolName: string): boolean {
-    if (!matcher || matcher === '*')
-      return true
-
-    // 精确匹配
-    return matcher === toolName
-  }
-
-  private executeHook(hook: HookDefinition, context: HookContext, event: HookEvent): HookExecutionResult {
+  private executeHook(hook: HookDefinition, context: HookContext | undefined, event: HookEvent): HookExecutionResult {
     // 1. 构建环境便利，将上下文传递给 Hool
     const env: Record<string, string | undefined> = {
       ...process.env,
       HOOK_EVENT: event,
-      HOOK_TOOL_NAME: context.tool_name,
-      HOOK_INPUT: JSON.stringify(context.tool_input),
+      HOOK_TOOL_NAME: context?.tool_name,
+      HOOK_INPUT: JSON.stringify(context?.tool_input),
     }
 
     // 2. PostToolUse 时还要传递输出
-    if (context.tool_output)
+    if (context?.tool_output)
       env.HOOK_TOOL_OUTPUT = context.tool_output
 
     try {
@@ -196,7 +195,7 @@ export class HookManager {
       // 命令执行成功，退出码为 0
       // 注意：execSync 成功时只返回 stdout, stderr 需要额外获取
       if (output.trim())
-        console.log(`  [hook] ${output.trim().slice(0, 100)}`)
+        console.log(`  ${pc.green('[hook]')} ${output.trim().slice(0, 100)}`)
 
       return {
         exitCode: HookExitCode.Contiune,
