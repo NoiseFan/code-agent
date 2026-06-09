@@ -1,5 +1,5 @@
 import type { Anthropic } from '@anthropic-ai/sdk'
-import type { Message, SubAgentContext, ToolDefinition, ToolHandler } from '../types'
+import type { Message, SubAgentContext, ToolDefinition, ToolHandler, ToolInput } from '../types'
 import pc from 'picocolors'
 import { convertTools } from '../core'
 import { execTool } from '../core/agent-loop'
@@ -89,7 +89,7 @@ async function runSubAgent(prompt: string): Promise<string> {
 }
 
 export function createTaskHandler(): ToolHandler {
-  return async (input: Record<string, unknown>): Promise<string> => {
+  return async (input: ToolInput): Promise<string> => {
     const prompt = input.prompt as string | undefined
     const description = input.description as string | undefined
     if (!prompt)

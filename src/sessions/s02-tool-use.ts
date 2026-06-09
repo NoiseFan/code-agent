@@ -2,8 +2,9 @@ import type { PromptOpts } from '../types'
 import { config } from 'dotenv'
 import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoop, extractTextReply } from '../core/agent-loop'
+import { agentLoop } from '../core/agent-loop/simple'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { extractTextReply } from '../utils/agent-loop'
 import 'dotenv/config'
 
 config({ override: true, quiet: true })

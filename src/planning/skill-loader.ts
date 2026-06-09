@@ -2,7 +2,7 @@ import type { SkillDocument, ToolDefinition, ToolHandler } from '../types'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
-import { WORKDIR } from '../core/agent-loop'
+import { WORKDIR } from '../core/runtime'
 
 const SKILLS_DIR = path.join(WORKDIR, 'skills')
 export class SKILLRegistry {

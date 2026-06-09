@@ -1,8 +1,12 @@
-import type { TODOEnum, TodoManger } from './planning/todo'
+import type readline from 'node:readline'
+import type { HookManager } from '../persistence/hooks'
+import type { PermissionManager } from '../persistence/permission'
+import type { TODOEnum, TodoManger } from '../planning/todo'
 
 export interface PromptOpts {
   readLine: readline.Interface
   history: Message[]
+  hooks?: HookManager
 }
 
 export interface Message {
@@ -20,8 +24,10 @@ interface ToolUseBlock {
   type: 'tool_use'
   id: string
   name: string
-  input: Record<string, unknown>
+  input: ToolInput
 }
+
+export type ToolInput = Record<string, unknown>
 
 interface ToolResultBlock {
   type: 'tool_result'
@@ -66,19 +72,24 @@ export interface SubAgentContext {
   maxTurns: number
   systemPrompt: string
 }
-
-export interface AgentLoopOptions {
-  tools: ToolDefinition[]
-  handlers: Record<string, ToolHandler>
+export type AgentLoopOptions = Partial<AgentLoopCustomTool> & {
+  tools?: ToolDefinition[]
+  handlers?: Record<string, ToolHandler>
   system?: string
-  todoManager?: TodoManger
+  readline?: readline.Interface
+}
+
+interface AgentLoopCustomTool {
+  todoManager: TodoManger
+  perms: PermissionManager
+  hooks: HookManager
 }
 
 export type AgentLoopWithCompactOptions = AgentLoopOptions & Exclude<handlers, {
   state: CompactState
 }>
 
-export type ToolHandler = (input: Record<string, unknown>) => string | Promise<string>
+export type ToolHandler = (input: ToolInput) => string | Promise<string>
 
 /* ==================== TODO ==================== */
 

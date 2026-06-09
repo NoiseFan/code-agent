@@ -1,10 +1,11 @@
 import type { PromptOpts, ToolDefinition } from '../types'
 import pc from 'picocolors'
 import { initPrompt, resolvePrompt, welcome } from '../core'
-import { agentLoopWithCompact, extractTextReply } from '../core/agent-loop'
+import { agentLoopWithCompact } from '../core/agent-loop/compact'
 import { WORKDIR } from '../core/runtime'
 import { BASE_TOOLS } from '../core/tools'
 import { COMPACT_TOOL_DEFINITION, createCompactState } from '../persistence/compact'
+import { extractTextReply } from '../utils/agent-loop'
 
 const compactState = createCompactState()
 const TOOLS: Array<ToolDefinition> = [...BASE_TOOLS, COMPACT_TOOL_DEFINITION]

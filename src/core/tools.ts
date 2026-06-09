@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolHandler } from '../types'
+import type { ToolDefinition, ToolHandler, ToolInput } from '../types'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -84,7 +84,7 @@ export const runWrite: ToolHandler = async (input) => {
   }
 }
 
-export async function executeTool(name: string, input: Record<string, unknown>): Promise<string | undefined> {
+export async function executeTool(name: string, input: ToolInput): Promise<string | undefined> {
   if (name === 'bash') {
     const command = input.command as string
     const output = await runBash({ command })

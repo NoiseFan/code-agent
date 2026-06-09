@@ -36,7 +36,6 @@
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsgo --noEmit",
-    "format": "prettier --cache --write .",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build",
     "s01": "tsx src/sessions/s01-agent-loop.ts",
@@ -44,7 +43,9 @@
     "s03": "tsx src/sessions/s03-todo-write.ts",
     "s04": "tsx src/sessions/s04-subagent.ts",
     "s05": "tsx src/sessions/s05-skill-loader.ts",
-    "s06": "tsx src/sessions/s06-context-compact.ts"
+    "s06": "tsx src/sessions/s06-context-compact.ts",
+    "s07": "tsx src/sessions/s07-permission-system.ts",
+    "s08": "tsx src/sessions/s08-hook-system.ts"
   },
   "dependencies": {
     "picocolors": "^1.1.1"
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
     "@anthropic-ai/sdk": "^0.98.0",
+    "@clack/prompts": "^1.5.0",
     "@types/node": "^25.6.0",
     "@typescript/native-preview": "7.0.0-dev.20260517.1",
     "cac": "^7.0.0",

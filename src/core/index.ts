@@ -9,7 +9,9 @@ import { WORKDIR } from './runtime'
 /**
  * 转换成 Anthropic 格式的 Tool
  */
-export function convertTools(tools: ToolDefinition[]): Anthropic.Messages.Tool[] {
+export function convertTools(tools: ToolDefinition[] | undefined): Anthropic.Messages.Tool[] {
+  if (!tools || !tools.length)
+    return []
   return tools.map(t => ({
     name: t.name,
     description: t.description,
@@ -28,11 +30,18 @@ export function checkAPIKey(): void {
   }
 }
 
-export function welcome(opts: { section: string, desc: string }): { history: Array<Message>, readLine: readline.Interface } {
+export function welcome(opts: {
+  section: string
+  desc?: string
+}): {
+  history: Array<Message>
+  readLine: readline.Interface
+} {
   const { section, desc } = opts
   console.info(pc.cyan('╔════════════════════════════════════╗'))
   console.info(pc.cyan(`║  ${section}${' '.repeat(38 - 4 - section.length)}║`))
-  console.info(pc.cyan(`║  "${desc}"${' '.repeat(38 - 6 - desc.length)}║`))
+  if (desc)
+    console.info(pc.cyan(`║  "${desc}"${' '.repeat(38 - 6 - desc.length)}║`))
   console.info(pc.cyan('╚════════════════════════════════════╝'))
   console.info()
 
@@ -55,13 +64,53 @@ export function exit(trimmed: string, readLine: readline.Interface): void {
 }
 
 /**
+ * prompt 输入框
+ */
+async function inputPrompt(readLine: readline.Interface, prefix: string): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
+    readLine.question(pc.cyan(`${prefix}>>`), async (query: string) => {
+      if (query)
+        resolve(query)
+      else
+        reject(new Error('EOF'))
+    })
+  })
+}
+
+function outputHelp() {
+  console.log('Commands:')
+  console.log('  /hooks  - Show current hook configuration')
+  console.log('  /help   - Show this help message')
+  console.log('  q/exit  - Exit the session')
+}
+
+function outputCommand(query: string) {
+  switch (query) {
+    case '/help':
+      outputHelp()
+      break
+  }
+}
+/**
  * 初始化 prompt
  */
-export function initPrompt(opts: { query: string, readLine: readline.Interface, history: Message[] }): void {
-  const { query, readLine, history } = opts
+export async function initPrompt(opts: {
+  prefix?: string
+  query?: string
+  readLine: readline.Interface
+  history: Message[]
+}): Promise<string> {
+  const { prefix, readLine, history } = opts
+  let query = opts.query ?? ''
+  if (prefix)
+    query = await inputPrompt(readLine, prefix)
   const trimmed = query.trim().toLocaleLowerCase()
   exit(trimmed, readLine)
+
+  outputCommand(query)
+
   history.push({ role: 'user', content: query })
+  return query
 }
 
 export async function resolvePrompt(opts: {
