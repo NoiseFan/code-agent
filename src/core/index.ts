@@ -1,4 +1,5 @@
 import type { Anthropic } from '@anthropic-ai/sdk'
+import type { MemoryManger } from '../persistence/memory'
 import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
@@ -84,10 +85,26 @@ function outputHelp() {
   console.log('  q/exit  - Exit the session')
 }
 
-function outputCommand(query: string) {
+function outputMemory(memoryManager: MemoryManger) {
+  if (memoryManager.memories.size) {
+    console.log(pc.yellow('Current memories:'))
+    for (const [name, mem] of memoryManager.memories) {
+      console.log(`  [${mem.type}] ${name}: ${mem.description}`)
+    }
+  }
+  else {
+    console.log('  (no memories)')
+  }
+}
+
+function outputCommand(query: string, opt?: MemoryManger) {
   switch (query) {
     case '/help':
       outputHelp()
+      break
+    case '/memory':
+      if (opt)
+        outputMemory(opt)
       break
   }
 }
@@ -99,17 +116,18 @@ export async function initPrompt(opts: {
   query?: string
   readLine: readline.Interface
   history: Message[]
+  option?: MemoryManger
 }): Promise<string> {
-  const { prefix, readLine, history } = opts
+  const { prefix, readLine, history, option } = opts
   let query = opts.query ?? ''
   if (prefix)
     query = await inputPrompt(readLine, prefix)
   const trimmed = query.trim().toLocaleLowerCase()
   exit(trimmed, readLine)
 
-  outputCommand(query)
-
-  history.push({ role: 'user', content: query })
+  outputCommand(query, option)
+  if (!query.startsWith('/'))
+    history.push({ role: 'user', content: query })
   return query
 }
 
@@ -120,9 +138,13 @@ export async function resolvePrompt(opts: {
   prompt: (opts: PromptOpts) => Promise<void>
 }): Promise<void> {
   const { history, fileName, readLine, prompt } = opts
-  console.log()
-  console.log(JSON.stringify(history))
-  if (fileName)
-    await writeJSONFile({ path: `./.tmp/${fileName}.json`, content: history })
+  if (history.length) {
+    console.log()
+    console.log(JSON.stringify(history))
+
+    if (fileName)
+      await writeJSONFile({ path: `./.tmp/${fileName}.json`, content: history })
+  }
+
   await prompt({ history, readLine })
 }

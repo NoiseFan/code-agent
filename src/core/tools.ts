@@ -11,6 +11,8 @@ function safePath(relativePath: string): string {
   if (!absolutePath.startsWith(WORKDIR)) {
     throw new Error(`Path escapes workspace: ${relativePath}`)
   }
+  if (['.env'].includes(absolutePath))
+    throw new Error(`Invalid file: ${relativePath}`)
   return absolutePath
 }
 
