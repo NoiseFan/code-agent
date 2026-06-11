@@ -16,10 +16,17 @@ export interface MemoryEntry {
   /**
    * 完整内容
    */
-  content:string
+  content: string
   /**
    * 持久化文件名称
    * @example prefer_tabs.md
    */
   file: string
+}
+
+export interface ParsedMemory {
+  name?: string
+  description?: string
+  type?: MemoryType
+  content: string
 }

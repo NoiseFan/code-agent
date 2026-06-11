@@ -1,4 +1,5 @@
-import type { MemoryEntry, MemoryType } from '../types/memory'
+import type { MemoryEntry, MemoryType, ParsedMemory } from '../types/memory'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { WORKDIR } from '../core/runtime'
 
@@ -33,7 +34,36 @@ export class MemoryManger {
     this.memories = new Map()
   }
 
-  loadAll(): void {}
+  loadAll(): void {
+    this.memories = new Map()
+    if (!existsSync(this.memoryDir))
+      return
+
+    // 扫描所有 .md 文件
+    const files = readdirSync(this.memoryDir)
+
+    for (const file of files) {
+      if (!file.endsWith('.md'))
+        continue
+      if (file === 'MEMORY.md')
+        continue
+
+      // 读取文件
+      const filePath = join(this.memoryDir, file)
+      const content = readFileSync(file, 'utf-8')
+      const parsed = this.parseFrontmatter(content)
+
+      if (parsed && parsed.name) {
+        this.memories.set(parsed.name, {
+          name: parsed.name,
+          description: parsed.description || '',
+          type: (parsed.type as MemoryType) || 'project',
+          content: parsed.content,
+          file,
+        })
+      }
+    }
+  }
 
   loadMemoryPrompt(): string {
     return ''
@@ -50,7 +80,32 @@ export class MemoryManger {
 
   private rebuildIndex(): void {}
 
-  private parseFrontmatter(text: string): null {
-    return null
+  private parseFrontmatter(content: string): ParsedMemory | null {
+    const match = content.match(/^---\n(.*?)\n---\n(.*)/s)
+    if (!match)
+      return null
+
+    const header = match[1]
+    const body = match[2]
+
+    const result: ParsedMemory = {
+      content: body.trim(),
+    }
+
+    for (const line of header.split('\n')) {
+      const colIndex = line.indexOf(':')
+      if (colIndex) {
+        const key = line.slice(0, colIndex).trim() as keyof ParsedMemory
+        const value = line.slice(colIndex + 1).trim()
+
+        if (key === 'name')
+          result.name = value
+        if (key === 'description')
+          result.description = value
+        if (key === 'type')
+          result.type = value as MemoryType
+      }
+    }
+    return result
   }
 }
