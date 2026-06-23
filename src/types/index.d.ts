@@ -1,6 +1,8 @@
 import type readline from 'node:readline'
 import type { HookManager } from '../persistence/hooks'
+import type { MemoryManger } from '../persistence/memory'
 import type { PermissionManager } from '../persistence/permission'
+import type { SystemPromptBuilder } from '../persistence/prompt'
 import type { TODOEnum, TodoManger } from '../planning/todo'
 
 export interface PromptOpts {
@@ -83,6 +85,8 @@ interface AgentLoopCustomTool {
   todoManager: TodoManger
   perms: PermissionManager
   hooks: HookManager
+  memory: MemoryManger
+  systemBuilder: SystemPromptBuilder
 }
 
 export type AgentLoopWithCompactOptions = AgentLoopOptions & Exclude<handlers, {

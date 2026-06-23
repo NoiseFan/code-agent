@@ -2,6 +2,7 @@ import type { SkillDocument, ToolDefinition, ToolHandler } from '../types'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
+import { parseFrontmatter } from '..'
 import { WORKDIR } from '../core/runtime'
 
 const SKILLS_DIR = path.join(WORKDIR, 'skills')
@@ -23,7 +24,7 @@ export class SKILLRegistry {
         const skillPath = path.join(skillDir, entry.name, 'SKILL.md')
         try {
           const content = await fs.readFile(skillPath, 'utf-8')
-          const { meta, body } = this.parseFrontmatter(content)
+          const { meta, body } = parseFrontmatter(content)
 
           const name = meta.name || entry.name
           const description = meta.description as string || 'No description'
@@ -37,29 +38,6 @@ export class SKILLRegistry {
       }
     }
     catch {}
-  }
-
-  /**
-   * 解析 frontmatter
-   */
-  parseFrontmatter(content: string): { meta: Record<string, unknown> & Partial<{ name: string }>, body: string } {
-    const match = content.match(/^---\n(.*?)\n---\n(.*)/s)
-    if (!match)
-      return { meta: {}, body: content }
-
-    const meta: Record<string, unknown> = {}
-
-    for (const line of match[1].trim().split('\n')) {
-      if (!line.includes(':'))
-        continue
-
-      const colonIndex = line.indexOf(':')
-      const key = line.slice(0, colonIndex).trim()
-      const value = line.slice(colonIndex + 1).trim()
-      meta[key] = value
-    }
-
-    return { meta, body: match[2] }
   }
 
   /**
