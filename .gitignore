@@ -8,3 +8,4 @@ dist
 .tmp
 .task_outputs
 .claude
+.memory

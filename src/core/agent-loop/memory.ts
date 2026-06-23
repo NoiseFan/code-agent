@@ -33,7 +33,6 @@ export async function agentLoopWithMemory(
     // 1. 每次调用时均重新构建提示词，包含最新记忆
     const systemPrompt = buildSystemPrompt(system, memoryManager)
 
-    console.log('[]', tools)
     // 2. 调用模型
     const response = await client.messages.create({
       model: MODEL,

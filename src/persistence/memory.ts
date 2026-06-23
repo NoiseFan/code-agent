@@ -77,7 +77,7 @@ export class MemoryManger {
     }
 
     if (this.memories.size > 0)
-      console.log(pc.blue(`Memory loaded:; ${this.memories.size} memories from ${this.memoryDir}`))
+      console.log(pc.blue(`Memory loaded: ${this.memories.size} memories from ${this.memoryDir}`))
   }
 
   /**
