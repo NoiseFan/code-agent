@@ -27,7 +27,7 @@ export function transformAssistant(block: ContentBlock): ContentBlock {
   }
 }
 
-export async function execTool(
+export async function execTools(
   response: Anthropic.Message,
   context: {
     handlers: Record<string, ToolHandler>

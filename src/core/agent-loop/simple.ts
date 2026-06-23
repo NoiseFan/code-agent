@@ -1,6 +1,6 @@
 import type { AgentLoopOptions, ContentBlock, Message } from '../../types'
 import pc from 'picocolors'
-import { execTool } from '../../utils/agent-loop'
+import { execTools } from '../../utils/agent-loop'
 import { convertTools } from '../index'
 import { client, MODEL, WORKDIR } from '../runtime'
 
@@ -31,7 +31,7 @@ export async function agentLoop(messages: Message[], options: AgentLoopOptions):
 
     // 4. 执行工具
     let useTodo = false
-    const results = await execTool(response, {
+    const results = await execTools(response, {
       handlers,
       finalCallBack: (toolBlock) => {
         // s03: 记录是否使用了 todo

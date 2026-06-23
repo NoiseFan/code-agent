@@ -11,6 +11,8 @@ function safePath(relativePath: string): string {
   if (!absolutePath.startsWith(WORKDIR)) {
     throw new Error(`Path escapes workspace: ${relativePath}`)
   }
+  if (['.env'].includes(absolutePath))
+    throw new Error(`Invalid file: ${relativePath}`)
   return absolutePath
 }
 
@@ -93,6 +95,7 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
 }
 
 export const BASE_TOOLS: ToolDefinition[] = [
+
   {
     name: 'bash',
     description: 'Run a shell command',
@@ -139,6 +142,34 @@ export const BASE_TOOLS: ToolDefinition[] = [
         new_text: { type: 'string', description: 'New text to insert' },
       },
       required: ['path', 'old_text', 'new_text'],
+    },
+  },
+  {
+    name: 'save_memory',
+    description: 'Save a persistent memory that survives across sessions.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Short identifier (e.g. prefer_tabs, db_schema)',
+        },
+        description: {
+          type: 'string',
+          description: 'One-line summary of wht this memory captures.',
+        },
+        type: {
+          type: 'string',
+          enum: ['user', 'feedback', 'project', 'reference'],
+          // 用户=偏好，反馈=更正，项目=非显而易见的项目约定，参考=外部资源链接
+          description: 'user=preferences, feedback=corrections, project=non-obvious project conventions, reference=external resource pointers',
+        },
+        content: {
+          type: 'string',
+          description: 'Full memory contnet (mutil-line OK)',
+        },
+      },
+      required: ['name', 'description', 'type', 'content'],
     },
   },
 ]

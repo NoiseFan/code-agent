@@ -6,6 +6,7 @@ import pc from 'picocolors'
 import { client, MODEL, WORKDIR } from '../core/runtime'
 
 import { runBash, runEdit, runRead, runWrite } from '../core/tools'
+import { writeJSONFile } from '../utils/write'
 
 /* ==================== 配置常量 ==================== */
 // 上下文上限（估算）
@@ -199,6 +200,14 @@ ${conversation}`
 
   // 提取文本
   const textBlocks = response.content.filter(b => b.type === 'text')
+
+  await writeJSONFile({
+    path: `./.tmp/compact/${+Date.now()}.json`,
+    content: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: textBlocks },
+    ],
+  })
 
   return textBlocks.map(b => b.text).join('\n').trim()
 }
