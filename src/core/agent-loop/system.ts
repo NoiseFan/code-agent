@@ -1,12 +1,12 @@
 import type { TextBlock } from '@anthropic-ai/sdk/resources'
-import type { AgentLoopOptions, Message, ToolHandler } from '../../types'
+import type { AgentLoopOptions, Message } from '../../types'
 import pc from 'picocolors'
 import { convertTools } from '..'
 import { detectPromptLeakage } from '../../persistence/prompt'
 import { execTools, transformAssistant } from '../../utils/agent-loop'
 
 import { client, MODEL } from '../runtime'
-import { BASE_HANDLERS, BASE_TOOLS, saveMemory } from '../tools'
+import { BASE_TOOLS } from '../tools'
 
 /**
  * 动态组装而不是写死！
@@ -15,12 +15,8 @@ export async function agentLoopWithSystemPrompt(
   messages: Array<Message>,
   opts: AgentLoopOptions,
 ): Promise<void> {
-  const { systemBuilder, memory } = opts
+  const { systemBuilder, handlers } = opts
   const tools = convertTools(BASE_TOOLS)
-  const handlers: Record<string, ToolHandler> = {
-    ...BASE_HANDLERS,
-    save_memory: input => saveMemory(memory, input),
-  }
 
   while (true) {
     // 1. 构建系统提示词

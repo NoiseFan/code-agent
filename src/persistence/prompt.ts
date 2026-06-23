@@ -199,6 +199,15 @@ export class SystemPromptBuilder {
   build(): string {
     return [this.buildStable(), DYNAMIC_BOUNDARY, this.buildDynamicContext()].join('\n\n')
   }
+
+  /**
+   * 输出提示词统计
+   */
+  notify(): void {
+    const fullPrompt = this.build()
+    const tokenEsimate = esimateTokens(fullPrompt)
+    console.log(`[System prompt assembled: ${fullPrompt.length} chars, ~${tokenEsimate} tokens]`)
+  }
 }
 
 /**
@@ -247,4 +256,15 @@ export function detectPromptLeakage(output: string, systemPrompt: string, thresh
     similarity: Math.round(similarity * 100) / 100,
     matched,
   }
+}
+
+/**
+ * 粗略估算 token 数（不引入 tokenizer 库）
+ * - 英文：约 4 个字符 = 1 token
+ * - 中文：约 1.5 个字符 = 1 token
+ */
+function esimateTokens(prompt: string): number {
+  const englishChars = (prompt.match(/[a-z0-9\s]/gi) || []).length
+  const otherChars = prompt.length - englishChars
+  return Math.ceil(englishChars / 4 + otherChars * 1.5)
 }
