@@ -26,34 +26,39 @@ async function prompt(opts: PromptOpts) {
   const { history, hooks, readLine } = opts
 
   while (true) {
-    const query = await initPrompt({ prefix: '08', readLine, history })
+    const initResult = await initPrompt({ prefix: '08', readLine, history })
+    if (initResult.type === 'command') {
+      // 提示 hook 详情信息
+      if (hooks) {
+        if (initResult.command.trim() === '/hooks') {
+          let hooksCount = 0
+          console.log('Current hooks:')
+          for (const event of HooksEventEnum) {
+            hooksCount += hooks.hooks[event].length
+            console.log(`  ${event} ${hooks.hooks[event].length} hooks`)
+          }
 
-    // 提示 hook 详情信息
-    if (hooks) {
-      if (query.trim() === '/hooks') {
-        let hooksCount = 0
-        console.log('Current hooks:')
-        for (const event of HooksEventEnum) {
-          hooksCount += hooks.hooks[event].length
-          console.log(`  ${event} ${hooks.hooks[event].length} hooks`)
-        }
+          if (!hooksCount)
+            continue
 
-        if (!hooksCount)
-          continue
-
-        console.log('Deatils:')
-        for (const event of HooksEventEnum) {
-          for (const hook of hooks.hooks[event]) {
-            if (hook) {
-              console.log(
-                `  [${event}] matcher=${hook.matcher || '*'} command="${hook.command.slice(0, 50)}"`,
-              )
+          console.log('Deatils:')
+          for (const event of HooksEventEnum) {
+            for (const hook of hooks.hooks[event]) {
+              if (hook) {
+                console.log(
+                  `  [${event}] matcher=${hook.matcher || '*'} command="${hook.command.slice(0, 50)}"`,
+                )
+              }
             }
           }
+          continue
         }
-        continue
       }
+      continue
     }
+    if (initResult.type === 'exit')
+      break
+
     try {
       await agentLoopWithHooks(history, { system, tools: BASE_TOOLS, hooks })
       extractTextReply(history)

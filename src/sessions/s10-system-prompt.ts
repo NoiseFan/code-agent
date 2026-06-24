@@ -34,7 +34,12 @@ async function prompt(opts: PromptOpts) {
   }
 
   while (true) {
-    await initPrompt({ prefix: '10', readLine, history })
+    const initResult = await initPrompt({ prefix: '10', readLine, history, option: { memory: memoryManager, systemPrompt } })
+    if (initResult.type === 'command')
+      continue
+    if (initResult.type === 'exit')
+      break
+
     await agentLoopWithSystemPrompt(history, {
       handlers,
       systemBuilder: systemPrompt,

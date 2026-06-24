@@ -47,6 +47,7 @@ export class SystemPromptBuilder {
 
     this.workdir = workdir || WORKDIR
     this.baseSystem = baseSystem || defaultSystemPrompt(this.workdir)
+    console.log('[]', this.baseSystem)
     this.tools = tools || []
     this.skillsDir = join(this.workdir, 'skills')
     this.memoryManager = memoryManager
@@ -179,11 +180,11 @@ export class SystemPromptBuilder {
 
     const sections: Array<string> = []
     for (const builder of [
-      this._buildCore,
-      this._buildToollListing,
-      this._buildSkillListing,
-      this._buildMemorySection,
-      this._buildClaudeMD,
+      this._buildCore.bind(this),
+      this._buildToollListing.bind(this),
+      this._buildSkillListing.bind(this),
+      this._buildMemorySection.bind(this),
+      this._buildClaudeMD.bind(this),
     ]) {
       const section = builder()
       if (section)
@@ -206,7 +207,7 @@ export class SystemPromptBuilder {
   notify(): void {
     const fullPrompt = this.build()
     const tokenEsimate = esimateTokens(fullPrompt)
-    console.log(`[System prompt assembled: ${fullPrompt.length} chars, ~${tokenEsimate} tokens]`)
+    console.log(`[System prompt assembled: ~${tokenEsimate} tokens], ${fullPrompt.length} chars`)
   }
 }
 
@@ -263,7 +264,7 @@ export function detectPromptLeakage(output: string, systemPrompt: string, thresh
  * - 英文：约 4 个字符 = 1 token
  * - 中文：约 1.5 个字符 = 1 token
  */
-function esimateTokens(prompt: string): number {
+export function esimateTokens(prompt: string): number {
   const englishChars = (prompt.match(/[a-z0-9\s]/gi) || []).length
   const otherChars = prompt.length - englishChars
   return Math.ceil(englishChars / 4 + otherChars * 1.5)

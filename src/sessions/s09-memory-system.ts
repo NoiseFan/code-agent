@@ -18,20 +18,11 @@ async function prompt(opts: PromptOpts) {
   memoryManager.init()
 
   while (true) {
-    const query = await initPrompt({ prefix: '09', readLine, history, option: memoryManager })
-
-    if (query.trim() === '/memory') {
-      if (memoryManager.memories.size) {
-        console.log('Current memories:')
-        for (const [name, mem] of memoryManager.memories) {
-          console.log(`  [${mem.type}] ${name}: ${mem.description}`)
-        }
-      }
-      else {
-        console.log('  (no memories)')
-      }
+    const initResult = await initPrompt({ prefix: '09', readLine, history, option: { memory: memoryManager } })
+    if (initResult.type === 'command')
       continue
-    }
+    if (initResult.type === 'exit')
+      break
 
     try {
       await agentLoopWithMemory({
