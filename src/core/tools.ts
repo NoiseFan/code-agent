@@ -1,4 +1,7 @@
-import type { ToolDefinition, ToolHandler, ToolInput } from '../types'
+import type { MemoryManger } from '../persistence/memory'
+import type { SystemPromptBuilder } from '../persistence/prompt'
+import type { AgentLoopOptions, ToolDefinition, ToolHandler, ToolInput } from '../types'
+import type { MemoryMeta, MemoryType } from '../types/memory'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -84,6 +87,24 @@ export const runWrite: ToolHandler = async (input) => {
   catch (e) {
     return `Error: ${e}`
   }
+}
+
+export function saveMemory(
+  input: ToolInput,
+  memoryManager?: MemoryManger,
+  systemManager?: SystemPromptBuilder,
+): string {
+  if (!memoryManager)
+    return ''
+  const result = memoryManager.saveMemory({
+    name: input.name as string,
+    description: input.description as string,
+    type: input.type as MemoryType,
+    content: input.content as string,
+  })
+  if (systemManager)
+    systemManager.invalidateCache()
+  return result
 }
 
 export async function executeTool(name: string, input: ToolInput): Promise<string | undefined> {
@@ -174,7 +195,7 @@ export const BASE_TOOLS: ToolDefinition[] = [
   },
 ]
 
-export const BASE_HANDLERS: Record<string, ToolHandler> = {
+export const BASE_HANDLERS: AgentLoopOptions['handlers'] = {
   bash: runBash,
   read_file: runRead,
   write_file: runWrite,

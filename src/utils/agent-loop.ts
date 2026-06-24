@@ -30,17 +30,20 @@ export function transformAssistant(block: ContentBlock): ContentBlock {
 export async function execTools(
   response: Anthropic.Message,
   context: {
-    handlers: Record<string, ToolHandler>
+    handlers?: Record<string, ToolHandler>
     finalCallBack?: (toolBlock: ContentBlock) => void
   },
 ): Promise<Array<ContentBlock>> {
   const results: ToolResultBlock[] = []
+  const { handlers, finalCallBack } = context
+
+  if (!handlers)
+    return results
+
   for (const block of response.content) {
     // 1. 排除边界条件
     if (block.type !== 'tool_use')
       continue
-
-    const { handlers, finalCallBack } = context
 
     // 2. 解析到具体的 执行函数 >> runBash
     const handler = handlers[block.name]

@@ -1,9 +1,12 @@
 import type { Anthropic } from '@anthropic-ai/sdk'
+import type { HookManager } from '../persistence/hooks'
 import type { MemoryManger } from '../persistence/memory'
+import type { SystemPromptBuilder } from '../persistence/prompt'
 import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
 import pc from 'picocolors'
+import { esimateTokens } from '../persistence/prompt'
 import { writeJSONFile } from '../utils/write'
 import { WORKDIR } from './runtime'
 
@@ -57,11 +60,12 @@ export function welcome(opts: {
   return { history, readLine }
 }
 
-export function exit(trimmed: string, readLine: readline.Interface): void {
+export function exit(trimmed: string, readLine: readline.Interface): boolean {
   if (!['q', 'exit', ''].includes(trimmed))
-    return
+    return false
   readLine.close()
   console.log('GoodBye!')
+  return true
 }
 
 /**
@@ -78,17 +82,30 @@ async function inputPrompt(readLine: readline.Interface, prefix: string): Promis
   })
 }
 
-function outputHelp() {
+function outputHelp(opts?: outputCommandOptions) {
   console.log('Commands:')
-  console.log('  /hooks  - Show current hook configuration')
+  if (opts) {
+    const { hook, memory, systemPrompt } = opts
+    if (hook)
+      console.log('  /hooks  - Show current hook configuration')
+    if (systemPrompt) {
+      console.log('  /prompt  - Show full system prompt')
+      console.log('  /section - Show section headers')
+      console.log('  /budget  - Show token estimate')
+    }
+    if (memory)
+      console.log('  /memory  - Show current memories')
+  }
   console.log('  /help   - Show this help message')
   console.log('  q/exit  - Exit the session')
 }
 
-function outputMemory(memoryManager: MemoryManger) {
-  if (memoryManager.memories.size) {
+function outputMemory(opts?: MemoryManger) {
+  if (!opts)
+    return
+  if (opts.memories.size) {
     console.log(pc.yellow('Current memories:'))
-    for (const [name, mem] of memoryManager.memories) {
+    for (const [name, mem] of opts.memories) {
       console.log(`  [${mem.type}] ${name}: ${mem.description}`)
     }
   }
@@ -97,17 +114,51 @@ function outputMemory(memoryManager: MemoryManger) {
   }
 }
 
-function outputCommand(query: string, opt?: MemoryManger) {
+/**
+ * 输入 token 预估使用量
+ */
+function outputTokens(opts?: SystemPromptBuilder) {
+  if (!opts)
+    return
+
+  const prompt = opts.build()
+  console.log(`Total: ~${esimateTokens(prompt)} tokens (${prompt.length} chars)`)
+}
+
+function outputPrompt(opts?: SystemPromptBuilder) {
+  if (!opts)
+    return
+  console.log('--- System Prompt ---')
+  console.log(opts.build())
+  console.log('--- End')
+}
+
+type outputCommandOptions = Partial<{
+  hook: HookManager
+  memory: MemoryManger
+  systemPrompt: SystemPromptBuilder
+}>
+
+function outputCommand(query: string, opt?: outputCommandOptions): boolean {
   switch (query) {
     case '/help':
-      outputHelp()
+      outputHelp(opt)
       break
     case '/memory':
-      if (opt)
-        outputMemory(opt)
+      outputMemory(opt?.memory)
+      break
+    case '/prompt':
+      outputPrompt(opt?.systemPrompt)
+      break
+    case '/budget':
+      outputTokens(opt?.systemPrompt)
       break
   }
+
+  return query.startsWith('/')
 }
+
+type PromptResultType = { type: 'message', message: Array<Message> } | { type: 'command', command: string } | { type: 'exit' }
 /**
  * 初始化 prompt
  */
@@ -116,19 +167,23 @@ export async function initPrompt(opts: {
   query?: string
   readLine: readline.Interface
   history: Message[]
-  option?: MemoryManger
-}): Promise<string> {
+  option?: outputCommandOptions
+}): Promise<PromptResultType> {
   const { prefix, readLine, history, option } = opts
   let query = opts.query ?? ''
   if (prefix)
     query = await inputPrompt(readLine, prefix)
   const trimmed = query.trim().toLocaleLowerCase()
-  exit(trimmed, readLine)
 
-  outputCommand(query, option)
+  if (exit(trimmed, readLine))
+    return { type: 'exit' }
+
+  if (outputCommand(query, option))
+    return { type: 'command', command: query }
+
   if (!query.startsWith('/'))
     history.push({ role: 'user', content: query })
-  return query
+  return { type: 'message', message: history }
 }
 
 export async function resolvePrompt(opts: {

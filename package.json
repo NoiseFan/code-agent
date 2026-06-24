@@ -46,7 +46,8 @@
     "s06": "tsx src/sessions/s06-context-compact.ts",
     "s07": "tsx src/sessions/s07-permission-system.ts",
     "s08": "tsx src/sessions/s08-hook-system.ts",
-    "s09": "tsx src/sessions/s09-memory-system.ts"
+    "s09": "tsx src/sessions/s09-memory-system.ts",
+    "s10": "tsx src/sessions/s10-system-prompt.ts"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

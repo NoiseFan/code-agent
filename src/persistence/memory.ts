@@ -1,4 +1,4 @@
-import type { MemoryEntry, MemoryType, ParsedMemory } from '../types/memory'
+import type { MemoryEntry, MemoryMeta, MemoryType, ParsedMemory } from '../types/memory'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import pc from 'picocolors'
@@ -42,6 +42,14 @@ export class MemoryManger {
   }
 
   /**
+   * 初始化 Memory
+   */
+  init(): void {
+    this.loadAll()
+    this.notify()
+  }
+
+  /**
    * 加载所有记忆
    * 1. 先扫描 .memory 目录下所有 .md 文件
    * 2. 在解析 frontmatter
@@ -65,7 +73,7 @@ export class MemoryManger {
       const content = readFileSync(filePath, 'utf-8')
       const parsed = this.parseFrontmatter(content)
 
-      if (parsed && parsed.name) {
+      if (parsed && parsed.name && parsed.content) {
         this.memories.set(parsed.name, {
           name: parsed.name,
           description: parsed.description || '',
@@ -116,12 +124,7 @@ export class MemoryManger {
    * 2. 更新内存中记忆
    * 3. 重建记忆索引
    */
-  saveMemory(opts: {
-    name: string
-    description: string
-    type: MemoryType
-    content: string
-  }): string {
+  saveMemory(opts: MemoryMeta): string {
     const { name, description, type, content } = opts
     if (!MEMORY_TYPE.includes(type))
       return `Error: type must be one of [${MEMORY_TYPE.join(', ')}]`
@@ -213,5 +216,17 @@ export class MemoryManger {
       }
     }
     return result
+  }
+
+  /**
+   * 初始化提示
+   */
+  notify(): void {
+    if (this.memories.size) {
+      console.log(`[${this.memories.size} memories loaded into context]`)
+    }
+    else {
+      console.log('[No existing memories. The agent can create them with save_mamory.]')
+    }
   }
 }
