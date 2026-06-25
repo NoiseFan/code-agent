@@ -5,8 +5,11 @@ import type { SystemPromptBuilder } from '../persistence/prompt'
 import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
+import { before } from 'node:test'
 import pc from 'picocolors'
+import { accurateCalculation, autoCompact, CONTEXT_LIMIT } from '../persistence/compact'
 import { esimateTokens } from '../persistence/prompt'
+import { CONTINUATION_MESSAGE, MAX_RECOVERY_ATTEMPTS } from '../persistence/recovery'
 import { writeJSONFile } from '../utils/write'
 import { WORKDIR } from './runtime'
 
@@ -133,13 +136,37 @@ function outputPrompt(opts?: SystemPromptBuilder) {
   console.log('--- End')
 }
 
+function outputStatus(histroy?: Array<Message>) {
+  if (!histroy || !histroy.length)
+    return
+  const estimatedTokens = accurateCalculation(histroy)
+  console.log('Recovery config:')
+  console.log(`  Max retries: ${MAX_RECOVERY_ATTEMPTS}`)
+  console.log(`  Token threshold: ${CONTEXT_LIMIT}`)
+  console.log(`  Continuation message: "${CONTINUATION_MESSAGE.slice(0, 60)}..."`)
+  console.log(`Current context: ${histroy.length} messages, ${estimatedTokens} tokens.`)
+}
+
+async function outputCompact(histroy?: Array<Message>) {
+  if (!histroy || !histroy.length) {
+    console.log(`  (no messsage to compact)`)
+    return
+  }
+
+  const beforeTokens = accurateCalculation(histroy)
+  console.log(`[Compacting ${histroy.length} messages (~${beforeTokens} tokens)...]`)
+  await autoCompact(histroy)
+  const afterTokens = accurateCalculation(histroy)
+  console.log(`[Compacted to ${afterTokens} tokens]`)
+}
+
 type outputCommandOptions = Partial<{
   hook: HookManager
   memory: MemoryManger
   systemPrompt: SystemPromptBuilder
 }>
 
-function outputCommand(query: string, opt?: outputCommandOptions): boolean {
+function outputCommand(query: string, opt?: outputCommandOptions & { history?: Array<Message> }): boolean {
   switch (query) {
     case '/help':
       outputHelp(opt)
@@ -153,6 +180,11 @@ function outputCommand(query: string, opt?: outputCommandOptions): boolean {
     case '/budget':
       outputTokens(opt?.systemPrompt)
       break
+    case '/status':
+      outputStatus(opt?.history)
+      break
+    case '/compact':
+      outputCompact(opt?.history)
   }
 
   return query.startsWith('/')
@@ -178,7 +210,7 @@ export async function initPrompt(opts: {
   if (exit(trimmed, readLine))
     return { type: 'exit' }
 
-  if (outputCommand(query, option))
+  if (outputCommand(query, { history, ...option }))
     return { type: 'command', command: query }
 
   if (!query.startsWith('/'))

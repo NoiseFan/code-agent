@@ -36,7 +36,6 @@ export async function agentLoopWithSystemPrompt(
     messages.push({ role: 'assistant', content: assistantContent })
 
     // 4. 检验输出
-
     const outputText = assistantContent.filter((b): b is TextBlock => b.type === 'text').map(b => b.text).join('\n')
     if (outputText) {
       const { leaked, similarity } = detectPromptLeakage(outputText, system)

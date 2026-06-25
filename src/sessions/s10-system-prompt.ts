@@ -5,6 +5,7 @@ import { WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS, saveMemory } from '../core/tools'
 import { MEMORY_GUIDANCE, MemoryManger } from '../persistence/memory'
 import { SystemPromptBuilder } from '../persistence/prompt'
+import { extractTextReply } from '../utils/agent-loop'
 
 const system = [
   `You are a coding agent at ${WORKDIR}. Use tools to solve tasks.`,
@@ -45,6 +46,8 @@ async function prompt(opts: PromptOpts) {
       systemBuilder: systemPrompt,
       memory: memoryManager,
     })
+
+    extractTextReply(history)
   }
 }
 
