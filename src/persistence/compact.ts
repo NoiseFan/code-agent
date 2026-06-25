@@ -2,15 +2,16 @@ import type { CompactState, Message, ToolDefinition, ToolResultBlock, ToolUseBlo
 
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { countTokens } from '@anthropic-ai/tokenizer'
 import pc from 'picocolors'
-import { client, MODEL, WORKDIR } from '../core/runtime'
 
+import { client, MODEL, WORKDIR } from '../core/runtime'
 import { runBash, runEdit, runRead, runWrite } from '../core/tools'
 import { writeJSONFile } from '../utils/write'
 
 /* ==================== 配置常量 ==================== */
 // 上下文上限（估算）
-export const CONTEXT_LIMIT = 5_000
+export const CONTEXT_LIMIT = 50_000
 
 // 保留最近几个完整工具调用结果
 const KEEP_RECENT_TOOL_RESULTS = 3
@@ -31,8 +32,15 @@ const TOOL_RESULTS_DIR = path.join(WORKDIR, '.task_outputs', 'tool-results')
 /**
  * 估算上下文大小
  */
-export function estimateContextSize(message: Message[]): number {
+export function estimateContextSize(message: Array<Message>): number {
   return JSON.stringify(message).length
+}
+
+/**
+ * 精确计算上下文大小
+ */
+export function accurateCalculation(message: Array<Message>): number {
+  return countTokens(JSON.stringify(message))
 }
 
 /**
@@ -175,6 +183,7 @@ async function writeTranScript(messages: Array<Message>) {
   const lines = messages.map(m => JSON.stringify(m))
   await fs.writeFile(transcriptPath, lines.join('\n'), 'utf-8')
 
+  console.log(pc.green(`[transcript saved: ${path.relative(WORKDIR, transcriptPath)}]`))
   return transcriptPath
 }
 
@@ -212,6 +221,61 @@ ${conversation}`
   return textBlocks.map(b => b.text).join('\n').trim()
 }
 
+/**
+ * autoCompact: 使用 LLM 摘要替换对话历史
+ * 与 compactHistory 不同的是：
+ * - compactHistory 是主动触发，清理上下文
+ * - autoCompact 是被动补救
+ */
+export async function autoCompact(messages: Array<Message>): Promise<void> {
+  // 1. 先写 transcript
+  await writeTranScript(messages)
+
+  // 2. 调用 LLM 生成摘要
+  const conversation = JSON.stringify(messages).slice(0, 80_000)
+  const prompt = [
+    'Summarize this coding-agent conversation for continuity. Inclaude:',
+    '1. Task overview and success criteria.',
+    '2. Current state: completed work, files touched.',
+    '3. Key decisions and failed approaches.',
+    '4. Remaining next step.',
+    'Be concise but preserve critical details.',
+    conversation,
+  ]
+
+  let summary: string
+  try {
+    const response = await client.messages.create({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt.join('\n') }],
+      max_tokens: 4_000,
+    })
+
+    const textBlocks = response.content.filter(b => b.type === 'text')
+    summary = textBlocks.map(b => b.text).join('\n').trim()
+  }
+  catch (e) {
+    summary = `(compact failed: ${(e as Error).message}). Previous context lost.`
+  }
+
+  const content: Array<string> = [
+    'This session continues from a previous conversation that was compacted.',
+    'Summary of prior context',
+    '',
+    '',
+    summary,
+    '',
+    '',
+    'Continue from where we left off without re-asking the user.',
+  ]
+
+  messages.length = 0
+  messages.push({
+    role: 'user',
+    content: content.join('\n'),
+  })
+}
+
 interface CompactHistoryOptsType {
   message: Array<Message>
   state: CompactState
@@ -221,8 +285,7 @@ export async function compactHistory(opts: CompactHistoryOptsType): Promise<Arra
   const { message, state, compactFocus } = opts
 
   // 1. 先写 transcript (完整历史备份)
-  const trancscriptPath = await writeTranScript(message)
-  console.log(pc.green(`[transcript saved: ${path.relative(WORKDIR, trancscriptPath)}]`))
+  await writeTranScript(message)
 
   // 2. 调用 LLM 生成摘要
   let summary = await summarizeHistory(message)
