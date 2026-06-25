@@ -47,7 +47,6 @@ export class SystemPromptBuilder {
 
     this.workdir = workdir || WORKDIR
     this.baseSystem = baseSystem || defaultSystemPrompt(this.workdir)
-    console.log('[]', this.baseSystem)
     this.tools = tools || []
     this.skillsDir = join(this.workdir, 'skills')
     this.memoryManager = memoryManager

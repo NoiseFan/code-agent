@@ -157,17 +157,16 @@ async function outputCompact(histroy?: Array<Message>) {
   console.log(`[Compacting ${histroy.length} messages (~${beforeTokens} tokens)...]`)
   await autoCompact(histroy)
   const afterTokens = accurateCalculation(histroy)
-  console.log(`[Compacted tp ${afterTokens} tokens]`)
+  console.log(`[Compacted to ${afterTokens} tokens]`)
 }
 
 type outputCommandOptions = Partial<{
-  history: Array<Message>
   hook: HookManager
   memory: MemoryManger
   systemPrompt: SystemPromptBuilder
 }>
 
-function outputCommand(query: string, opt?: outputCommandOptions): boolean {
+function outputCommand(query: string, opt?: outputCommandOptions & { history?: Array<Message> }): boolean {
   switch (query) {
     case '/help':
       outputHelp(opt)
@@ -211,7 +210,7 @@ export async function initPrompt(opts: {
   if (exit(trimmed, readLine))
     return { type: 'exit' }
 
-  if (outputCommand(query, option))
+  if (outputCommand(query, { history, ...option }))
     return { type: 'command', command: query }
 
   if (!query.startsWith('/'))

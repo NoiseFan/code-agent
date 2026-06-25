@@ -69,7 +69,7 @@ export async function agentLoopWithRecovery(
       return
 
     // 5. 处理工具调用
-    const result = execTools(response, { handlers })
+    const result = await execTools(response, { handlers })
 
     // 6. 将结果追加回消息
     messages.push({ role: 'user', content: result })
