@@ -2,10 +2,10 @@ import type { Anthropic } from '@anthropic-ai/sdk'
 import type { HookManager } from '../persistence/hooks'
 import type { MemoryManger } from '../persistence/memory'
 import type { SystemPromptBuilder } from '../persistence/prompt'
+import type { TaskManager } from '../persistence/task-manager'
 import type { Message, PromptOpts, ToolDefinition } from '../types'
 import process from 'node:process'
 import readline from 'node:readline'
-import { before } from 'node:test'
 import pc from 'picocolors'
 import { accurateCalculation, autoCompact, CONTEXT_LIMIT } from '../persistence/compact'
 import { esimateTokens } from '../persistence/prompt'
@@ -88,7 +88,7 @@ async function inputPrompt(readLine: readline.Interface, prefix: string): Promis
 function outputHelp(opts?: outputCommandOptions) {
   console.log('Commands:')
   if (opts) {
-    const { hook, memory, systemPrompt } = opts
+    const { hook, memory, systemPrompt, task } = opts
     if (hook)
       console.log('  /hooks  - Show current hook configuration')
     if (systemPrompt) {
@@ -98,6 +98,8 @@ function outputHelp(opts?: outputCommandOptions) {
     }
     if (memory)
       console.log('  /memory  - Show current memories')
+    if (task)
+      console.log('  /task - Show execute tasks')
   }
   console.log('  /help   - Show this help message')
   console.log('  q/exit  - Exit the session')
@@ -140,7 +142,7 @@ function outputStatus(histroy?: Array<Message>) {
   if (!histroy || !histroy.length)
     return
   const estimatedTokens = accurateCalculation(histroy)
-  console.log('Recovery config:')
+  console.log(pc.green('Recovery config:'))
   console.log(`  Max retries: ${MAX_RECOVERY_ATTEMPTS}`)
   console.log(`  Token threshold: ${CONTEXT_LIMIT}`)
   console.log(`  Continuation message: "${CONTINUATION_MESSAGE.slice(0, 60)}..."`)
@@ -160,10 +162,29 @@ async function outputCompact(histroy?: Array<Message>) {
   console.log(`[Compacted to ${afterTokens} tokens]`)
 }
 
+async function outputTasks(taskManager?: TaskManager) {
+  if (!taskManager)
+    return
+
+  const tasks = taskManager.listAll()
+  const pending = tasks.filter(t => t.status === 'pending').length
+  const inProgress = tasks.filter(t => t.status === 'in_progress').length
+  const completed = tasks.filter(t => t.status === 'completed').length
+
+  console.log(pc.green('Task system status:'))
+  console.log(`  Tasks: ${tasks.length} total (${pending} pending, ${inProgress} in progress, ${completed} completed)`)
+
+  console.log(`  Storage: ${taskManager.getDir()}`)
+  if (tasks.length) {
+    console.log('')
+    console.log(taskManager.renderList())
+  }
+}
 type outputCommandOptions = Partial<{
   hook: HookManager
   memory: MemoryManger
   systemPrompt: SystemPromptBuilder
+  task: TaskManager
 }>
 
 function outputCommand(query: string, opt?: outputCommandOptions & { history?: Array<Message> }): boolean {
@@ -185,6 +206,10 @@ function outputCommand(query: string, opt?: outputCommandOptions & { history?: A
       break
     case '/compact':
       outputCompact(opt?.history)
+      break
+    case '/task':
+      outputTasks(opt?.task)
+      break
   }
 
   return query.startsWith('/')

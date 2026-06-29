@@ -15,8 +15,8 @@ export async function agentLoopWithSystemPrompt(
   messages: Array<Message>,
   opts: AgentLoopOptions,
 ): Promise<void> {
-  const { systemBuilder, handlers } = opts
-  const tools = convertTools(BASE_TOOLS)
+  const { systemBuilder, handlers, tools = BASE_TOOLS } = opts
+  const anthropicTools = convertTools(tools)
 
   while (true) {
     // 1. 构建系统提示词
@@ -26,7 +26,7 @@ export async function agentLoopWithSystemPrompt(
     const response = await client.messages.create({
       model: MODEL,
       system,
-      tools,
+      tools: anthropicTools,
       messages,
       max_tokens: 8_000,
     })
@@ -49,17 +49,17 @@ export async function agentLoopWithSystemPrompt(
       return
 
     // 6. 处理工具调用
-    let useddMemory = false
+    let usedMemory = false
     const result = await execTools(response, {
       handlers,
       finalCallBack: (block) => {
         if (block.name === 'save_memory')
-          useddMemory = true
+          usedMemory = true
       },
     })
 
     // 7. 如果保存了记忆，清除缓存（下次重新构建稳定部分）
-    if (useddMemory)
+    if (usedMemory)
       systemBuilder?.invalidateCache()
 
     // 8. 将结果追加回消息

@@ -9,3 +9,4 @@ dist
 .task_outputs
 .claude
 .memory
+.task

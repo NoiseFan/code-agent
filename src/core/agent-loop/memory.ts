@@ -4,7 +4,7 @@ import { convertTools } from '..'
 import { MEMORY_GUIDANCE } from '../../persistence/memory'
 import { execTools, transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
-import { BASE_HANDLERS, BASE_TOOLS, saveMemory } from '../tools'
+import { BASE_HANDLERS, BASE_TOOLS, createMemoryTools } from '../tools'
 
 export async function agentLoopWithMemory(
   opts: {
@@ -18,7 +18,7 @@ export async function agentLoopWithMemory(
 
   const handlers: Record<string, ToolHandler> = {
     ...BASE_HANDLERS,
-    save_memory: input => saveMemory(input, memoryManager),
+    save_memory: input => createMemoryTools(input, memoryManager),
   }
 
   while (true) {

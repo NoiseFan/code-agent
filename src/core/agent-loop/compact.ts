@@ -9,12 +9,13 @@ import {
 } from '../../persistence/compact'
 import { convertTools } from '../index'
 import { client, MODEL } from '../runtime'
+import { BASE_TOOLS } from '../tools'
 
 /**
  * 主循环（带压缩）
  */
 export async function agentLoopWithCompact(messages: Array<Message>, opts: AgentLoopWithCompactOptions): Promise<void> {
-  const { system, tools, state } = opts
+  const { system, tools = BASE_TOOLS, state } = opts
   const anthropicTools = convertTools(tools)
 
   while (true) {

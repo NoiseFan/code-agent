@@ -5,10 +5,10 @@ import type { HookContext } from '../../types/hooks'
 import { convertTools } from '..'
 import { transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
-import { BASE_HANDLERS } from '../tools'
+import { BASE_HANDLERS, BASE_TOOLS } from '../tools'
 
 export async function agentLoopWithHooks(messages: Array<Message>, opts: AgentLoopOptions): Promise<void> {
-  const { system, tools, hooks } = opts
+  const { system, tools = BASE_TOOLS, hooks } = opts
   const anthropicTools = convertTools(tools)
 
   while (true) {
