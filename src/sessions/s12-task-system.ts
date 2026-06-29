@@ -44,7 +44,6 @@ async function prompt(opts: PromptOpts) {
 
   while (true) {
     const initResult = await initPrompt({ prefix: '12', readLine, history, option: { systemPrompt, task: taskManager } })
-    console.log('>>>>>>>>>', JSON.stringify(initResult))
     if (initResult.type === 'command')
       continue
     if (initResult.type === 'exit')
