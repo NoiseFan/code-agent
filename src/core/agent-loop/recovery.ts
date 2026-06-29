@@ -12,8 +12,8 @@ export async function agentLoopWithRecovery(
   messages: Array<Message>,
   opts: AgentLoopOptions,
 ): Promise<void> {
-  const { systemBuilder, handlers } = opts
-  const tools = convertTools(BASE_TOOLS)
+  const { systemBuilder, handlers, tools = BASE_TOOLS } = opts
+  const anthropicTools = convertTools(tools)
 
   // 连续 max_tokens 截断计数器
   let maxOutputRecoveryCount = 0
@@ -29,7 +29,7 @@ export async function agentLoopWithRecovery(
         response = await client.messages.create({
           model: MODEL,
           system,
-          tools,
+          tools: anthropicTools,
           messages,
           max_tokens: 8_000,
         })

@@ -3,9 +3,10 @@ import pc from 'picocolors'
 import { execTools } from '../../utils/agent-loop'
 import { convertTools } from '../index'
 import { client, MODEL, WORKDIR } from '../runtime'
+import { BASE_TOOLS } from '../tools'
 
 export async function agentLoop(messages: Message[], options: AgentLoopOptions): Promise<void> {
-  const { handlers, todoManager, tools } = options
+  const { handlers, todoManager, tools = BASE_TOOLS } = options
   const system = options.system ?? `You are a coding agent at ${WORKDIR}, use tools to solve tasks. Act, don't explain.`
   const anthropicTools = convertTools(tools)
 
