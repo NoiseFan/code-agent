@@ -34,6 +34,7 @@
     "lint:fix": "pnpm run lint --fix",
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "sync:sessions": "tsx scripts/sync-sessions.ts",
     "test": "vitest",
     "typecheck": "tsgo --noEmit",
     "release": "bumpp",
