@@ -54,9 +54,12 @@ export class TaskManager {
     writeFileSync(this.taskPath(task.id), JSON.stringify(task, null, 2), 'utf-8')
   }
 
+<<<<<<< HEAD
   /**
    * 创建任务
    */
+=======
+>>>>>>> 6fb3579 (feat: task system)
   create(opts: createTaskOptionsType): Task {
     const { subject, description = '', blockedBy } = opts
     for (const depId of blockedBy) {
@@ -166,9 +169,12 @@ export class TaskManager {
     return `Claimed ${taskId} (${task.subject})`
   }
 
+<<<<<<< HEAD
   /**
    * 标记完成任务
    */
+=======
+>>>>>>> 6fb3579 (feat: task system)
   completeTask(taskId: string): string {
     const task = this.load(taskId)
 
@@ -237,9 +243,13 @@ function generateTaskId(): string {
   const random = Math.floor(Math.random() * 10_000).toString().padStart(4, '0')
   return `task_${timestamp}_${random}`
 }
+<<<<<<< HEAD
 
 /* ==================== 工具定义 ==================== */
 
+=======
+/* ==================== 工具定义 ==================== */
+>>>>>>> 6fb3579 (feat: task system)
 export const TASK_TOOLS: Array<ToolDefinition> = [
   {
     name: 'create_task',
@@ -300,7 +310,10 @@ export const TASK_TOOLS: Array<ToolDefinition> = [
     },
   },
 ]
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6fb3579 (feat: task system)
 /* ==================== 工具 Handler ==================== */
 
 export function createTaskHandlers(taskManager: TaskManager): Record<string, ToolHandler> {
