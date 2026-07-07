@@ -7,6 +7,8 @@ import { transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
 import { BASE_HANDLERS } from '../tools'
 
+/* ==================== 这是一坨屎，没写完 ==================== */
+
 export async function agentLoopWithPermission(messages: Message[], options: AgentLoopOptions): Promise<void> {
   const { system, tools, perms, readline } = options
   const anthropicTools = convertTools(tools)

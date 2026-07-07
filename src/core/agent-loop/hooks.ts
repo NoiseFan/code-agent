@@ -82,9 +82,8 @@ async function execTools(
         continue
       }
     }
-
     // 3. 执行工具
-    const handler = BASE_HANDLERS[block.name]
+    const handler = BASE_HANDLERS![block.name]
     let output: string
 
     try {

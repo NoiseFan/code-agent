@@ -18,7 +18,7 @@ export async function agentLoopWithMemory(
 
   const handlers: Record<string, ToolHandler> = {
     ...BASE_HANDLERS,
-    save_memory: input => createMemoryTools(input, memoryManager),
+    ...createMemoryTools(memoryManager),
   }
 
   while (true) {

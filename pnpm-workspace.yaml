@@ -1,7 +1,10 @@
-packages: []
+shellEmulator: true
 
 allowBuilds:
   esbuild: true
+  simple-git-hooks: true
 
 trustPolicy: no-downgrade
+packages: []
+
 trustPolicyIgnoreAfter: 604800 # 7 days

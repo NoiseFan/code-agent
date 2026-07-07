@@ -1,6 +1,8 @@
 import type { ToolInput } from '../types'
 import type { PermissionDecision, PermissionModeType, PermissionRule } from '../types/permission'
 
+/* ==================== 这是一坨屎，没写完 ==================== */
+
 /* ==================== 权限管理器 ==================== */
 export const PermissionMode = {
   default: 'default',
@@ -45,6 +47,7 @@ export class PermissionManager {
   }
 
   check(name: string, input: ToolInput): PermissionDecision {
+    console.log('[]', name, input)
     return {
       behavior: 'allow',
       reason: '',
