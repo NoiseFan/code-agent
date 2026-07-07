@@ -2,9 +2,9 @@ import type { Anthropic } from '@anthropic-ai/sdk'
 import type { Message, SubAgentContext, ToolDefinition, ToolHandler, ToolInput } from '../types'
 import pc from 'picocolors'
 import { convertTools } from '../core'
-import { execTool } from '../core/agent-loop'
 import { client, MODEL, WORKDIR } from '../core/runtime'
 import { BASE_HANDLERS, BASE_TOOLS } from '../core/tools'
+import { execTools } from '../utils/agent-loop'
 import { writeJSONFile } from '../utils/write'
 
 // 子 Agent 最大
@@ -44,7 +44,7 @@ async function runSubAgent(prompt: string): Promise<string> {
     systemPrompt: SUBAGENT_SYSTEM,
     messages: subMessages,
     tools: BASE_TOOLS,
-    handlers: BASE_HANDLERS,
+    handlers: BASE_HANDLERS!,
     maxTurns: MAX_SUBAGENT_TURNS,
   }
 
@@ -70,7 +70,7 @@ async function runSubAgent(prompt: string): Promise<string> {
       break
 
     // 执行工具调用
-    const results = await execTool(response, { handlers: context.handlers })
+    const results = await execTools(response, { handlers: context.handlers })
 
     // 将结果追加回历史会话列表
     context.messages.push({ role: 'user', content: results })

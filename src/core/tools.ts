@@ -1,6 +1,6 @@
 import type { MemoryManger } from '../persistence/memory'
 import type { SystemPromptBuilder } from '../persistence/prompt'
-import type { AgentLoopOptions, ToolDefinition, ToolHandler, ToolInput } from '../types'
+import type { AgentLoopOptions, ToolDefinition, ToolHandler } from '../types'
 import type { MemoryType } from '../types/memory'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -109,14 +109,6 @@ export function createMemoryTools(
         systemManager.invalidateCache()
       return result
     },
-  }
-}
-
-export async function executeTool(name: string, input: ToolInput): Promise<string | undefined> {
-  if (name === 'bash') {
-    const command = input.command as string
-    const output = await runBash({ command })
-    return output
   }
 }
 

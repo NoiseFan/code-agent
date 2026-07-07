@@ -2,9 +2,10 @@ import process from 'node:process'
 import readline from 'node:readline'
 
 import { select } from '@clack/prompts'
-import pc from 'picocolors'
 import { WORKDIR } from '../core/runtime'
-import { PermissionManager, PermissionModels } from '../persistence/permission'
+import { PermissionModels } from '../persistence/permission'
+
+/* ==================== 这是一坨屎，没写完 ==================== */
 
 const SYSTEM = `You are a coding agent at ${WORKDIR}. Use tools to solve tasks.
 The user controls permissions. Some tool calls may be denied.
@@ -30,9 +31,9 @@ async function main() {
     initialValue: 'default',
   })
 
-  const pers = new PermissionManager(modeInput)
-  console.log(pc.cyan(`[Permission mode: ${pers.mode}]`))
-  console.log()
+  // const pers = new PermissionManager(modeInput)
+  // console.log(pc.cyan(`[Permission mode: ${pers.mode}]`))
+  console.log(readLine, modeInput, SYSTEM)
 }
 
 main().catch(console.error)

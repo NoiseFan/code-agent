@@ -1,5 +1,3 @@
-import type { ContentBlock } from './types'
-
 /**
  * 解析 frontmatter
  */

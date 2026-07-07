@@ -4,41 +4,16 @@
   "version": "0.0.0",
   "packageManager": "pnpm@11.1.2",
   "description": "My awesome typescript library",
-  "author": "Kevin Deng <sxzz@sxzz.moe>",
-  "license": "MIT",
-  "funding": "https://github.com/sponsors/sxzz",
-  "homepage": "https://github.com/sxzz/ts-starter#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sxzz/ts-starter.git"
-  },
-  "bugs": {
-    "url": "https://github.com/sxzz/ts-starter/issues"
-  },
-  "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
-  },
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
+  "author": "noisefan <noisefan@163.com>",
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
+    "test": "vitest",
     "lint": "eslint --cache .",
     "lint:fix": "pnpm run lint --fix",
-    "build": "tsdown",
-    "dev": "tsdown --watch",
+    "prepare": "simple-git-hooks",
     "sync:sessions": "tsx scripts/sync-sessions.ts",
-    "test": "vitest",
-    "typecheck": "tsgo --noEmit",
-    "release": "bumpp",
-    "prepublishOnly": "pnpm run build",
     "s01": "tsx src/sessions/s01-agent-loop.ts",
     "s02": "tsx src/sessions/s02-tool-use.ts",
     "s03": "tsx src/sessions/s03-todo-write.ts",
@@ -66,9 +41,19 @@
     "dotenv": "^17.4.2",
     "eslint": "^10.2.1",
     "eslint-plugin-format": "^1.0.2",
+    "lint-staged": "^17.0.8",
+    "simple-git-hooks": "^2.13.1",
     "tsdown": "^0.22.0",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,md,yml,yaml,json}": [
+      "eslint --cache --fix"
+    ]
   }
 }
