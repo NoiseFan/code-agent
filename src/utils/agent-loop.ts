@@ -1,11 +1,12 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { ContentBlock, Message, ToolHandler, ToolInput, ToolResultBlock } from '../types'
 import pc from 'picocolors'
+import { isArray, serialize } from './index'
 
 export function extractTextReply(message: Message[]): void {
   const lastContent = message.at(-1)?.content
   let output = ''
-  if (Array.isArray(lastContent)) {
+  if (isArray(lastContent)) {
     for (const block of lastContent) {
       if (block.type === 'text')
         output += block.text
@@ -23,7 +24,7 @@ export function transformAssistant(block: ContentBlock): ContentBlock {
       return { type: 'tool_use', id: block.id, name: block.name, input: block.input }
     default:
       // 将 thinking block 等，转换为 text
-      return { type: 'text', text: JSON.stringify(block) }
+      return { type: 'text', text: serialize(block) }
   }
 }
 

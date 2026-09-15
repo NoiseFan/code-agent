@@ -5,6 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import pc from 'picocolors'
 import { WORKDIR } from '../core/runtime'
+import { isArray, serialize } from '../utils'
 
 export const HooksEventEnum = ['SessionStart', 'PreToolUse', 'PostToolUse'] as const
 
@@ -87,7 +88,7 @@ export class HookManager {
       // 从 config.hooks 中读取各个事件的 Hook
       const hookConfig = config.hooks || {}
       for (const event of HooksEventEnum) {
-        if (Array.isArray(hookConfig[event]))
+        if (isArray(hookConfig[event]))
           this.hooks[event] = hookConfig[event]
       }
       console.log(`[Hooks loaded from ${configPath}]`)
@@ -176,7 +177,7 @@ export class HookManager {
       ...process.env,
       HOOK_EVENT: event,
       HOOK_TOOL_NAME: context?.tool_name,
-      HOOK_INPUT: JSON.stringify(context?.tool_input),
+      HOOK_INPUT: serialize(context?.tool_input),
     }
 
     // 2. PostToolUse 时还要传递输出

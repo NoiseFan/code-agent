@@ -3,6 +3,7 @@ import type { createTaskOptionsType, Task } from '../types/task'
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { WORKDIR } from '../core/runtime'
+import { serialize } from '../utils'
 
 export const TASK_PROMPT: Array<string> = [
   'This agent has a task system for planning and tracking mutil-step work.',
@@ -51,7 +52,7 @@ export class TaskManager {
    */
   save(task: Task): void {
     this.ensureDir()
-    writeFileSync(this.taskPath(task.id), JSON.stringify(task, null, 2), 'utf-8')
+    writeFileSync(this.taskPath(task.id), serialize(task, null, 2), 'utf-8')
   }
 
   /**
@@ -317,7 +318,7 @@ export function createTaskHandlers(taskManager: TaskManager): Record<string, Too
     list_tasks: () => taskManager.renderList(),
     get_task: (input) => {
       try {
-        return JSON.stringify(taskManager.get(input.task_id as string), null, 2)
+        return serialize(taskManager.get(input.task_id as string), null, 2)
       }
       catch {
         return `Error: Task ${input.task_id} not found`
