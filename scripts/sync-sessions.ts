@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pc from 'picocolors'
+import { serialize } from '../src/utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -55,6 +56,6 @@ for (const key of sKeys) {
 pkg.scripts = ordered
 
 // 5. write back with trailing newline (match existing style)
-writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+writeFileSync(pkgPath, `${serialize(pkg, null, 2)}\n`)
 
 console.log(`${pc.green('✓')} Synced ${pc.cyan(files.length)} session scripts: ${pc.yellow(sKeys.join(', '))}`)

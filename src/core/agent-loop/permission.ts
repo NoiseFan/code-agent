@@ -3,6 +3,7 @@ import type readline from 'node:readline'
 import type { PermissionManager } from '../../persistence/permission'
 import type { AgentLoopOptions, Message, ToolHandler, ToolInput, ToolResultBlock } from '../../types'
 import { convertTools } from '..'
+import { serialize } from '../../utils'
 import { transformAssistant } from '../../utils/agent-loop'
 import { client, MODEL } from '../runtime'
 import { BASE_HANDLERS } from '../tools'
@@ -118,7 +119,7 @@ async function execToolByAsk(opts: ExecToolByAskOptions) {
   const { readLine, perms, toolName, toolInput, handler } = opts
 
   // 需要用户确认
-  console.log(`\n  [Permission] ${toolName}: ${JSON.stringify(toolInput).slice(0, 200)}`)
+  console.log(`\n  [Permission] ${toolName}: ${serialize(toolInput).slice(0, 200)}`)
 
   const answerInput = await new Promise<string>((resolve) => {
     readLine.question('  Allow? (y/n/always): ', resolve)

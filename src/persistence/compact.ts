@@ -7,6 +7,7 @@ import pc from 'picocolors'
 
 import { client, MODEL, WORKDIR } from '../core/runtime'
 import { runBash, runEdit, runRead, runWrite } from '../core/tools'
+import { isArray, serialize } from '../utils'
 import { writeJSONFile } from '../utils/write'
 
 /* ==================== 配置常量 ==================== */
@@ -92,7 +93,7 @@ function collectToolResultBlocks(messages: Array<Message>): blockType {
   const blocks: blockType = []
 
   for (const [messageIndex, message] of messages.entries()) {
-    if (message.role !== 'user' || !Array.isArray(message.content))
+    if (message.role !== 'user' || !isArray(message.content))
       continue
 
     for (const [blockIndex, block] of message.content.entries()) {
@@ -180,7 +181,7 @@ async function writeTranScript(messages: Array<Message>) {
   await fs.mkdir(TRANSCRIPT_DIR, { recursive: true })
 
   const transcriptPath = path.join(TRANSCRIPT_DIR, `transcript${+Date.now()}.jsonl`)
-  const lines = messages.map(m => JSON.stringify(m))
+  const lines = messages.map(m => serialize(m))
   await fs.writeFile(transcriptPath, lines.join('\n'), 'utf-8')
 
   console.log(pc.green(`[transcript saved: ${path.relative(WORKDIR, transcriptPath)}]`))
@@ -188,7 +189,7 @@ async function writeTranScript(messages: Array<Message>) {
 }
 
 async function summarizeHistory(messages: Message[]): Promise<string> {
-  const conversation = JSON.stringify(messages).slice(0, 80_000)
+  const conversation = serialize(messages).slice(0, 80_000)
 
   const prompt = `Summarize this coding-agent conversation so work can continue.
 Preserve:
@@ -232,7 +233,7 @@ export async function autoCompact(messages: Array<Message>): Promise<void> {
   await writeTranScript(messages)
 
   // 2. 调用 LLM 生成摘要
-  const conversation = JSON.stringify(messages).slice(0, 80_000)
+  const conversation = serialize(messages).slice(0, 80_000)
   const prompt = [
     'Summarize this coding-agent conversation for continuity. Inclaude:',
     '1. Task overview and success criteria.',

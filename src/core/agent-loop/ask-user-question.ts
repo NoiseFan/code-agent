@@ -1,6 +1,7 @@
 import type readline from 'node:readline'
 import type { ToolDefinition, ToolHandler, ToolInput } from '../../types'
 import pc from 'picocolors'
+import { isArray, isBoolean, isRecord, isString, serialize } from '../../utils'
 
 export interface QuestionOption {
   label: string
@@ -42,6 +43,7 @@ export const ASK_USER_QUESTION_GUIDANCE: Array<string> = [
   '- Do not add an "Other" option and do not generate numeric shortcuts; the terminal UI adds both.',
 ]
 
+// todo 使用 zod 对 schema 进行重构！
 export const ASK_USER_QUESTION_TOOL: ToolDefinition = {
   name: 'ask_user_question',
   description: 'Ask the user one or more structured multiple-choice questions and wait for their answers.',
@@ -120,7 +122,7 @@ export class AskUserQuestion {
    */
   async ask(input: ToolInput): Promise<string> {
     const questions = this.parseQuestions(input)
-    if (typeof questions === 'string')
+    if (isString(questions))
       return `Error: Invalid ask_user_question input: ${questions}`
 
     const answers: QuestionAnswer[] = []
@@ -136,7 +138,7 @@ export class AskUserQuestion {
   }
 
   private parseQuestions(input: ToolInput): UserQuestion[] | string {
-    if (!Array.isArray(input.questions))
+    if (!isArray(input.questions))
       return 'questions must be an array'
     if (input.questions.length < 1 || input.questions.length > 4)
       return 'questions must contain 1-4 items'
@@ -145,17 +147,17 @@ export class AskUserQuestion {
     const seenQuestions = new Set<string>()
 
     for (const [questionIndex, rawQuestion] of input.questions.entries()) {
-      if (!this.isRecord(rawQuestion))
+      if (!isRecord(rawQuestion))
         return `questions[${questionIndex}] must be an object`
 
       const { question, header, options, multiSelect } = rawQuestion
-      if (typeof question !== 'string' || !question.trim())
+      if (!isString(question))
         return `questions[${questionIndex}].question must be a non-empty string`
-      if (typeof header !== 'string' || !header.trim())
+      if (!isString(header) || !header.trim())
         return `questions[${questionIndex}].header must be a non-empty string`
-      if (typeof multiSelect !== 'boolean')
+      if (!isBoolean(multiSelect))
         return `questions[${questionIndex}].multiSelect must be a boolean`
-      if (!Array.isArray(options) || options.length < 2 || options.length > 4)
+      if (!isArray(options) || options.length < 2 || options.length > 4)
         return `questions[${questionIndex}].options must contain 2-4 items`
       if (seenQuestions.has(question))
         return `question text must be unique: ${question}`
@@ -163,11 +165,11 @@ export class AskUserQuestion {
       const parsedOptions: QuestionOption[] = []
       const seenLabels = new Set<string>()
       for (const [optionIndex, rawOption] of options.entries()) {
-        if (!this.isRecord(rawOption))
+        if (!isRecord(rawOption))
           return `questions[${questionIndex}].options[${optionIndex}] must be an object`
-        if (typeof rawOption.label !== 'string' || !rawOption.label.trim())
+        if (!isString(rawOption.label) || !rawOption.label.trim())
           return `questions[${questionIndex}].options[${optionIndex}].label must be a non-empty string`
-        if (typeof rawOption.description !== 'string')
+        if (!isString(rawOption.description))
           return `questions[${questionIndex}].options[${optionIndex}].description must be a string`
         if (rawOption.label.toLowerCase() === 'other')
           return `questions[${questionIndex}] must not include an Other option`
@@ -255,10 +257,6 @@ export class AskUserQuestion {
   }
 
   private serialize(result: AskUserQuestionResult): string {
-    return JSON.stringify(result, null, 2)
-  }
-
-  private isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
+    return serialize(result, null, 2)
   }
 }

@@ -10,6 +10,7 @@ import pc from 'picocolors'
 import { accurateCalculation, autoCompact, CONTEXT_LIMIT } from '../persistence/compact'
 import { esimateTokens } from '../persistence/prompt'
 import { CONTINUATION_MESSAGE, MAX_RECOVERY_ATTEMPTS } from '../persistence/recovery'
+import { serialize } from '../utils'
 import { writeJSONFile } from '../utils/write'
 import { WORKDIR } from './runtime'
 
@@ -251,7 +252,7 @@ export async function resolvePrompt(opts: {
 }): Promise<void> {
   const { history, fileName, readLine, prompt } = opts
   if (history.length) {
-    const serializedHistory = JSON.stringify(history, (_key: string, value: unknown): unknown => {
+    const serializedHistory = serialize(history, (_key: string, value: unknown): unknown => {
       if (typeof value !== 'string')
         return value
 
