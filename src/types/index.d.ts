@@ -45,9 +45,11 @@ export interface ToolDefinition {
 }
 
 export interface ToolInputSchema {
-  type: 'object' | 'array' | 'string' | 'integer'
+  type: 'object' | 'array' | 'string' | 'integer' | 'boolean'
   properties?: Record<string, ToolProperty>
   required?: string[]
+  minItems?: number
+  maxItems?: number
 }
 export interface ToolProperty extends ToolInputSchema {
   description?: string
